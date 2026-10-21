@@ -1,0 +1,106 @@
+# Roteiro padrão do simulador: um dia típico do colete.
+!eco boot e diagnóstico
+diag
+!espera 1500
+!estado
+
+!eco sem calibração: inclinar não pode vibrar
+!frente 35
+!espera 5000
+!estado
+!frente 0
+!espera 2000
+
+!eco calibração pelo botão (postura correta = 5° para a frente, flex 2000)
+!frente 5
+!flex 2000
+!espera 3000
+!botao
+!espera 3000
+!estado
+get
+
+!eco pico curto (1 s) acima do limite: não vibra
+!frente 30
+!espera 1000
+!estado
+!frente 5
+!espera 2000
+!estado
+
+!eco corcunda por 5 s: atenção e depois alerta com pulsos 300/700
+!frente 32
+!espera 2000
+!estado
+!espera 3000
+!estado
+
+!eco volta para 18° de desvio (dentro da histerese 20-3): continua em alerta
+!frente 23
+!espera 1500
+!estado
+
+!eco desce para 16° de desvio (abaixo de 17°): para de vibrar
+!frente 21
+!espera 1500
+!estado
+!frente 5
+!espera 1500
+!estado
+
+!eco só o flex dobrando (queda de 25%): alerta pelo flex
+!flex 1500
+!espera 4000
+!estado
+!flex 2000
+!espera 1000
+!estado
+
+!eco flex desconectado (lê 0): é desativado e não alerta
+!flex 0
+!espera 3000
+!estado
+diag
+!espera 1200
+!flex 2000
+!espera 3000
+
+!eco ajuste pela serial: limite 10°, tempo 1 s
+set limite 10
+set tempo 1000
+!frente 18
+!espera 2000
+!estado
+!frente 5
+!espera 1500
+reset
+
+!eco MPU desconecta e volta
+!mpu off
+!espera 2500
+!estado
+!mpu on
+!espera 4000
+!estado
+
+!eco comandos do BioSpine V3
+STATUS
+CALIBRATE
+!espera 3000
+START
+!espera 2100
+STOP
+
+!eco plotter
+plot on
+!espera 300
+plot off
+
+!eco calibração recusada: mexeu durante a média
+!botao
+!espera 1700
+!frente 25
+!espera 400
+!frente 5
+!espera 1500
+!estado

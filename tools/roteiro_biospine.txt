@@ -1,0 +1,24 @@
+# Montagem do README do BioSpine V3: MPU com AD0 em 3V3 (0x69), dois flex (34 e 35), FSR no 32,
+# sem motor e sem botão. O firmware tem que se virar sozinho.
+!mpuaddr 69
+!flex 1900
+!flex2 2100
+!fsr 600
+!boot
+set flex2 auto
+!eco diag com a pinagem do BioSpine
+!espera 2500
+diag
+!espera 1200
+!estado
+!eco calibração pela serial (não há botão)
+calib
+!espera 3000
+!estado
+!eco só o flex 2 (direito) dobrando 30%
+!flex2 1470
+!espera 4000
+!estado
+!flex2 2100
+!espera 1000
+STATUS

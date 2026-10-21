@@ -1,0 +1,16 @@
+# MPU desligado no boot (fio solto) e flex também solto: não pode travar nem vibrar à toa.
+!mpu off
+!flex 0
+!boot
+!espera 3000
+diag
+!espera 1200
+calib
+!estado
+!eco MPU é encaixado com a placa ligada
+!mpu on
+!espera 4000
+!estado
+calib
+!espera 3000
+!estado

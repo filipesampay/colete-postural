@@ -1,0 +1,1287 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#eceef0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="BioSpine">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
+<title>BioSpine</title>
+<style>
+/* Leituras em display de 7 segmentos, como num instrumento de bancada (DESIGN.md).
+   Subconjunto de DSEG7 Classic Bold: Copyright (c) 2017 keshikan, Reserved Font Name "DSEG",
+   SIL Open Font License 1.1. Renomeada por ser versão modificada; a vírgula usa o glifo do ponto. */
+@font-face {
+  font-family: "Colete Segmentos";
+  font-weight: 700;
+  font-display: block;
+  src: url(data:font/ttf;base64,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) format("truetype");
+  unicode-range: U+20, U+21, U+2C-2E, U+30-39; /* o ° de 7 segmentos parece glifo faltando: fica na fonte do sistema */
+}
+
+/* Neutro + estado (DESIGN.md): a única cor forte é a do estado da postura.
+   Contraste conferido com o contrast-check do antislop (texto >= 4.5:1, bordas de controle >= 3:1). */
+:root {
+  color-scheme: light;
+  --bg: #eceef0; --panel: #f7f7f5; --panel2: #eef0f1; --ink: #14171a; --muted: #565e68;
+  --rule: #d5d9de;   /* filete decorativo entre seções */
+  --edge: #80878f;   /* contorno de controle (3,4:1 sobre o painel) */
+  --ghost: #e1e4e7;  /* segmentos apagados do display */
+  --trace2: #6f7780; /* segunda curva do gráfico (flex) */
+  --ok: #34c77b; --warn: #f2b233; --bad: #ef5350; --on-state: #14171a;
+  --body: #c4c9cf; --fabric: #5a626b; --hair: #3d4248;
+  --seg: "Colete Segmentos", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0d0f11; --panel: #16191c; --panel2: #1d2125; --ink: #e9ecef; --muted: #9aa3ad;
+    --rule: #262b31; --edge: #6b737c; --ghost: #23282d; --trace2: #7d868f;
+    --ok: #3dd68c; --warn: #f5b83d; --bad: #ff6369; --on-state: #0d0f11;
+    --body: #6c747d; --fabric: #2c3238; --hair: #202428;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0d0f11; --panel: #16191c; --panel2: #1d2125; --ink: #e9ecef; --muted: #9aa3ad;
+  --rule: #262b31; --edge: #6b737c; --ghost: #23282d; --trace2: #7d868f;
+  --ok: #3dd68c; --warn: #f5b83d; --bad: #ff6369; --on-state: #0d0f11;
+  --body: #6c747d; --fabric: #2c3238; --hair: #202428;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  -webkit-tap-highlight-color: transparent;
+}
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.seg { font-family: var(--seg); font-weight: 700; letter-spacing: .02em; }
+.muted { color: var(--muted); }
+.oculto { display: none !important; }
+
+/* ---------------------------------------------------------- cabeçalho */
+header.top {
+  display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap;
+  padding: 14px 16px 4px; max-width: 1280px; margin: 0 auto;
+}
+.logo { flex: none; display: block; }
+.marca { font-weight: 750; font-size: 19px; letter-spacing: -.01em; line-height: 1.15; margin-right: auto; }
+.marca small { display: block; font-weight: 500; font-size: 13px; color: var(--muted); letter-spacing: 0; }
+.estado-con {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px;
+  border: 1px solid var(--rule); border-radius: 8px; background: var(--panel); font-size: 14px; font-weight: 600; white-space: nowrap;
+}
+.led { width: 10px; height: 10px; border-radius: 50%; background: var(--edge); flex: none; }
+.estado-con[data-s="on"] .led { background: var(--ok); }
+.estado-con[data-s="off"] .led { background: var(--bad); }
+.estado-con[data-s="wait"] .led { background: var(--warn); }
+
+main {
+  display: grid; gap: 12px; padding: 10px 16px 32px; max-width: 1280px; margin: 0 auto;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "hero" "viz" "graf" "sens" "cfg";
+}
+@media (min-width: 920px) {
+  main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "hero viz" "graf viz" "sens viz" "cfg cfg"; }
+}
+.painel { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; min-width: 0; }
+.painel h2 { margin: 0; font-size: 16px; font-weight: 700; }
+.cab { display: flex; align-items: center; gap: 8px 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.cab .sp { flex: 1; }
+.cab .nota { font-size: 13px; color: var(--muted); }
+
+/* ---------------------------------------------------------- botões */
+.btn {
+  appearance: none; border: 1px solid var(--edge); border-radius: 8px; min-height: 48px; padding: 0 16px;
+  background: var(--panel); color: var(--ink); font-weight: 650; font-size: 16px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background-color .15s, transform .08s;
+}
+.btn:hover { background: var(--panel2); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .45; cursor: default; transform: none; }
+.btn.pri { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+.btn.pri:hover { background: var(--ink); opacity: .9; }
+.btn.sm { min-height: 44px; padding: 0 12px; font-size: 14px; }
+.btn svg { width: 20px; height: 20px; flex: none; }
+.vib.on svg { animation: treme .12s infinite; } /* só enquanto o motor está ligado de verdade */
+@keyframes treme { 25% { transform: translateX(-1.5px) rotate(-4deg); } 75% { transform: translateX(1.5px) rotate(4deg); } }
+
+/* ---------------------------------------------------------- leitura principal */
+.hero { grid-area: hero; position: relative; overflow: hidden; --cor: var(--edge); padding-top: 22px; }
+/* faixa superior = estado atual (informação, não enfeite) */
+.hero::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 6px; background: var(--cor); transition: background-color .3s; }
+[data-e="ok"] { --cor: var(--ok); }
+[data-e="atencao"] { --cor: var(--warn); }
+.hero[data-e="alerta"] { --cor: var(--bad); border-color: var(--bad); animation: alarme 1s steps(2) infinite; }
+.hero.stale .visor, .hero.stale .metas { opacity: .5; }
+@keyframes alarme { 50% { box-shadow: inset 0 0 0 2px var(--bad); } } /* acompanha o alarme físico */
+.topo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.selo {
+  display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 4px;
+  font-weight: 800; font-size: 15px; letter-spacing: .03em; background: var(--panel2); color: var(--ink); border: 1px solid var(--edge);
+}
+[data-e="ok"] .selo, [data-e="atencao"] .selo, [data-e="alerta"] .selo { background: var(--cor); color: var(--on-state); border-color: var(--cor); }
+.hud[data-e="alerta"] { --cor: var(--bad); }
+.topo .sub { font-size: 15px; color: var(--muted); }
+.visor {
+  margin: 18px 0 4px; padding: 14px 12px 10px; border-radius: 6px; background: var(--panel2);
+  display: flex; flex-direction: column; align-items: center;
+}
+.leitura { position: relative; display: inline-flex; align-items: flex-start; line-height: 1; }
+.digitos { position: relative; font-family: var(--seg); font-weight: 700; font-size: clamp(76px, 22vw, 136px); }
+.digitos i { position: absolute; right: 0; top: 0; font-style: normal; color: var(--ghost); }
+.digitos b { position: relative; font-weight: 700; }
+.grau { font-weight: 700; font-size: clamp(34px, 9vw, 58px); color: var(--muted); margin-left: 4px; }
+.visor small { margin-top: 10px; font-size: 14px; color: var(--muted); text-align: center; }
+.cont { min-height: 40px; margin: 10px 0 2px; display: grid; gap: 6px; }
+.cont-bar { height: 8px; border-radius: 2px; background: var(--rule); overflow: hidden; }
+.cont-bar i { display: block; height: 100%; width: 0; background: var(--cor); transition: width .1s linear; }
+.cont-t { font-size: 15px; font-weight: 650; text-align: center; }
+.metas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 6px 0 14px; border-top: 1px solid var(--rule); }
+.meta { padding: 10px 8px 0; min-width: 0; }
+.meta + .meta { border-left: 1px solid var(--rule); }
+.meta small { display: block; color: var(--muted); font-size: 13px; }
+.meta b { display: block; font-size: 22px; margin: 4px 0 2px; white-space: nowrap; }
+.meta em { font-style: normal; font-size: 13px; color: var(--muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aviso { display: none; margin: 0 0 12px; padding: 10px 12px; border-radius: 6px; font-size: 15px; font-weight: 600; background: var(--panel2); border: 1px solid var(--edge); }
+.aviso.on { display: block; }
+.aviso.erro { border-color: var(--bad); border-left-width: 6px; } /* borda vermelha + texto: falha real de sensor */
+.acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 400px) { .acoes .btn { padding: 0 10px; font-size: 15px; } .acoes .btn svg { display: none; } }
+
+/* ---------------------------------------------------------- vista 3D */
+.viz { grid-area: viz; display: flex; flex-direction: column; }
+.vistas { display: inline-flex; border: 1px solid var(--edge); border-radius: 8px; overflow: hidden; }
+.vistas button { border: 0; background: var(--panel); min-height: 44px; padding: 0 12px; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.vistas button + button { border-left: 1px solid var(--edge); }
+.vistas button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.palco { position: relative; flex: 1; min-height: 340px; height: min(62vh, 540px); border-radius: 6px; overflow: hidden; background: var(--panel2); touch-action: none; cursor: grab; }
+@media (min-width: 920px) { .palco { height: auto; min-height: 480px; } }
+.palco canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.dica { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+.legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 14px; }
+.legenda span { display: inline-flex; align-items: center; gap: 7px; }
+.legenda i { width: 14px; height: 10px; border-radius: 2px; display: inline-block; }
+.opc { display: flex; flex-wrap: wrap; gap: 0 18px; margin-top: 4px; font-size: 14px; }
+.opc label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; }
+.opc input { width: 18px; height: 18px; accent-color: var(--ink); }
+.viz.fechado .palco, .viz.fechado .legenda, .viz.fechado .opc, .viz.fechado .vistas, .viz.fechado .dica, .viz.fechado #bExpandir { display: none; }
+.viz.fechado .cab { margin: 0; }
+
+/* modo expandido: só o manequim, com a leitura de cada sensor no corpo */
+.viz.expandido {
+  position: fixed; inset: 0; z-index: 20; border: 0; border-radius: 0; background: var(--panel);
+  padding: calc(10px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+}
+.viz.expandido .palco { flex: 1; height: auto; min-height: 0; }
+.viz.expandido .dica, .viz.expandido .opc, .viz.expandido #b3d { display: none; }
+.viz.expandido .cab { margin-bottom: 8px; }
+.viz.expandido .legenda { margin-top: 8px; }
+body.travado { overflow: hidden; }
+.hud {
+  display: none; position: absolute; left: 10px; top: 10px; z-index: 1; padding: 10px 12px; border-radius: 6px;
+  background: var(--panel); border: 1px solid var(--rule); pointer-events: none; gap: 4px; justify-items: start;
+}
+.viz.expandido .hud { display: grid; }
+.hud .selo { min-height: 28px; font-size: 14px; }
+.hud-d { font-size: clamp(40px, 9vw, 72px); line-height: 1.05; }
+.hud-d span { font-family: system-ui, sans-serif; color: var(--muted); font-size: .55em; vertical-align: top; }
+.hud small { font-size: 14px; color: var(--muted); }
+@media (max-height: 520px) { /* celular deitado: altura é o que falta */
+  .viz.expandido .legenda, .hud small { display: none; }
+  .hud { padding: 6px 8px; }
+  .hud-d { font-size: 34px; }
+}
+
+/* ---------------------------------------------------------- gráfico */
+.graf { grid-area: graf; }
+.graf-c { position: relative; height: 210px; }
+.graf-c canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.leg-g { display: flex; gap: 6px 14px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.leg-g i { display: inline-block; width: 16px; height: 0; border-top: 3px solid; vertical-align: middle; margin-right: 6px; }
+.csv { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.csv small { color: var(--muted); font-size: 14px; }
+
+/* ---------------------------------------------------------- sensores */
+.sens { grid-area: sens; }
+.lin { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; padding: 11px 0; border-top: 1px solid var(--rule); }
+.lin:first-of-type { border-top: 0; padding-top: 0; }
+.lin .led { width: 12px; height: 12px; grid-row: 1 / span 2; }
+.lin[data-s="on"] .led { background: var(--ok); }
+.lin[data-s="idle"] .led { background: transparent; box-shadow: inset 0 0 0 2px var(--edge); }
+.lin[data-s="off"] .led { background: var(--bad); }
+.lin[data-s="vib"] .led { background: var(--warn); }
+.lin b { font-weight: 650; }
+.lin .st { font-size: 14px; color: var(--muted); grid-column: 2; }
+.lin .val { grid-row: 1 / span 2; grid-column: 3; text-align: right; font-size: 20px; }
+.lin .val small { display: block; font-family: system-ui, sans-serif; font-weight: 500; font-size: 13px; color: var(--muted); letter-spacing: 0; }
+.lin .val.txt { font-family: inherit; font-size: 16px; font-weight: 650; }
+.barra { grid-column: 2 / span 2; height: 6px; border-radius: 2px; background: var(--rule); position: relative; margin-top: 6px; }
+.barra i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: var(--ink); width: 0; transition: width .15s; }
+.barra u { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--bad); }
+.extras { font-size: 14px; color: var(--muted); margin-top: 8px; border-top: 1px solid var(--rule); padding-top: 10px; }
+
+/* ---------------------------------------------------------- ajustes */
+.cfg { grid-area: cfg; }
+.campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 0 28px; }
+.campo { padding: 10px 0 4px; border-top: 1px solid var(--rule); }
+.campo label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-weight: 650; font-size: 15px; }
+.campo output { font-family: var(--seg); font-weight: 700; font-size: 17px; white-space: nowrap; }
+.campo p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+input[type=range] { width: 100%; height: 44px; margin: 0; accent-color: var(--ink); cursor: pointer; }
+.campo.sel label { display: grid; gap: 6px; }
+select { min-height: 44px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--edge); background: var(--panel); font-weight: 600; }
+.cfg-a { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+.cfg-a .btn { min-width: 140px; }
+.cfg-a .versao { margin-left: auto; font-size: 13px; color: var(--muted); }
+
+/* ---------------------------------------------------------- avisos (toasts) */
+#toasts { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%); display: grid; gap: 8px; z-index: 9; width: min(92vw, 420px); pointer-events: none; }
+.toast {
+  background: var(--ink); color: var(--panel); padding: 12px 14px; border-radius: 8px; font-weight: 600; font-size: 15px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.28); /* único elemento elevado: fica por cima do conteúdo */
+  display: flex; gap: 10px; align-items: center; animation: entra .2s ease-out;
+}
+.toast::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--edge); flex: none; }
+.toast.ok::before { background: var(--ok); }
+.toast.erro::before { background: var(--bad); }
+.toast.sai { opacity: 0; transition: opacity .3s; }
+@keyframes entra { from { opacity: 0; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <img class="logo" src="/icon.svg" width="40" height="40" alt="">
+  <div class="marca">BioSpine<small>Colete de monitoramento postural</small></div>
+  <button class="btn sm" id="bTema" aria-live="polite">Tema: automático</button>
+  <span class="estado-con" id="conn" data-s="wait" role="status"><span class="led"></span><span id="connT">Conectando</span></span>
+</header>
+
+<main>
+  <section class="painel hero" id="hero" data-e="off" aria-label="Leitura da postura">
+    <div class="topo">
+      <span class="selo" id="selo" aria-live="polite">CONECTANDO</span>
+      <span class="sub" id="sub">Procurando o colete na rede</span>
+    </div>
+    <div class="visor">
+      <div class="leitura">
+        <span class="digitos"><i aria-hidden="true" id="fantasma">88,8</i><b id="desvio">--</b></span><span class="grau">°</span>
+      </div>
+      <small>desvio em relação à postura calibrada</small>
+    </div>
+    <div class="cont" id="cont">
+      <div class="cont-bar"><i id="contBar"></i></div>
+      <div class="cont-t" id="contT"></div>
+    </div>
+    <div class="metas">
+      <div class="meta"><small>Frente / trás</small><b class="seg" id="mPitch">--</b><em id="mPitchD">&nbsp;</em></div>
+      <div class="meta"><small>Lateral</small><b class="seg" id="mRoll">--</b><em id="mRollD">&nbsp;</em></div>
+      <div class="meta"><small>Limite</small><b class="seg" id="mLim">--</b><em id="mTempo">&nbsp;</em></div>
+    </div>
+    <div class="aviso" id="aviso" role="alert"></div>
+    <div class="acoes">
+      <button class="btn pri" id="bCalib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>Calibrar postura</button>
+      <button class="btn vib" id="bMotor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4 8v8M20 8v8"/></svg>Testar motor</button>
+    </div>
+  </section>
+
+  <section class="painel viz" id="viz" aria-label="Vista do colete">
+    <div class="cab">
+      <h2>Vista do colete</h2>
+      <span class="sp"></span>
+      <div class="vistas" id="vistas" role="group" aria-label="Ângulo da câmera">
+        <button data-v="costas" aria-pressed="true">Costas</button><button data-v="lado" aria-pressed="false">Lado</button><button data-v="frente" aria-pressed="false">Frente</button>
+      </div>
+      <button class="btn sm" id="bExpandir" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span>Expandir</span></button>
+      <button class="btn sm" id="b3d" aria-expanded="true">Ocultar 3D</button>
+    </div>
+    <div class="palco" id="palco">
+      <canvas id="c3d" role="img" aria-label="Manequim com o colete, inclinação e sensores em tempo real"></canvas>
+      <div class="hud" id="hud" data-e="off">
+        <span class="selo" id="hSelo">CONECTANDO</span>
+        <div class="seg hud-d"><b id="hDesvio">--</b><span>°</span></div>
+        <small id="hPR"></small>
+      </div>
+    </div>
+    <p class="dica">Arraste para girar. A silhueta clara é a postura calibrada. A curvatura do flex é ilustrativa: o sensor mede um número só.</p>
+    <div class="legenda">
+      <span><i style="background:var(--ink)"></i>Sensor ligado</span>
+      <span><i style="border:2px dashed var(--edge)"></i>Desligado ou ausente</span>
+      <span><i style="background:var(--warn)"></i>Motor vibrando</span>
+    </div>
+    <div class="opc">
+      <label><input type="checkbox" id="invP"> Inverter frente/trás</label>
+      <label><input type="checkbox" id="invR"> Inverter lado</label>
+    </div>
+  </section>
+
+  <section class="painel graf" aria-label="Gráfico">
+    <div class="cab">
+      <h2>Desvio nos últimos 30 s</h2><span class="sp"></span>
+      <div class="leg-g"><span><i style="color:var(--ink)"></i>Desvio (°)</span><span id="legFlex" class="oculto"><i style="color:var(--trace2)"></i>Flex (%)</span><span><i style="color:var(--bad);border-top-style:dashed"></i>Limite</span></div>
+    </div>
+    <div class="graf-c"><canvas id="cg" role="img" aria-label="Gráfico do desvio nos últimos 30 segundos"></canvas></div>
+    <div class="csv">
+      <button class="btn sm" id="bCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>Baixar CSV</button>
+      <button class="btn sm" id="bLimpar">Zerar gravação</button>
+      <small id="csvInfo">Nada gravado ainda</small>
+    </div>
+  </section>
+
+  <section class="painel sens" aria-label="Sensores">
+    <div class="cab"><h2>Sensores</h2></div>
+    <div class="lin" id="sMpu" data-s="idle"><i class="led"></i><b>MPU-6050 (inclinação)</b><span class="val seg" id="vMpu">--</span><span class="st" id="tMpu">aguardando</span></div>
+    <div class="lin" id="sFlex" data-s="idle"><i class="led"></i><b>Sensor flex (curvatura)</b><span class="val seg" id="vFlex">--</span><span class="st" id="tFlex">aguardando</span><div class="barra"><i id="bFlex"></i><u id="lFlex"></u></div></div>
+    <div class="lin oculto" id="sFlex2" data-s="idle"><i class="led"></i><b>Sensor flex 2</b><span class="val seg" id="vFlex2">--</span><span class="st" id="tFlex2">aguardando</span><div class="barra"><i id="bFlex2"></i><u id="lFlex2"></u></div></div>
+    <div class="lin" id="sMotor" data-s="idle"><i class="led"></i><b>Motor vibratório</b><span class="val txt" id="vMotor">--</span><span class="st" id="tMotor">aguardando</span></div>
+    <div class="extras oculto" id="extras"></div>
+  </section>
+
+  <section class="painel cfg" aria-label="Ajustes">
+    <div class="cab"><h2>Ajustes do colete</h2><span class="nota">Ficam salvos no colete, mesmo sem o celular.</span><span class="sp"></span><small class="muted" id="cfgSt"></small></div>
+    <form id="form" onsubmit="return false">
+      <div class="campos">
+        <div class="campo"><label for="limiteGraus">Limite de inclinação <output id="oLimiteGraus"></output></label><p>Acima disso a postura conta como ruim.</p><input type="range" id="limiteGraus" min="2" max="60" step="1"></div>
+        <div class="campo"><label for="tempoMs">Tempo até vibrar <output id="oTempoMs"></output></label><p>Quanto tempo fora do limite antes do motor ligar.</p><input type="range" id="tempoMs" min="0" max="60000" step="500"></div>
+        <div class="campo"><label for="histerese">Histerese <output id="oHisterese"></output></label><p>Margem para sair do alerta, evita liga e desliga.</p><input type="range" id="histerese" min="0" max="19" step="0.5"></div>
+        <div class="campo"><label for="limiteFlex">Limite do flex <output id="oLimiteFlex"></output></label><p>Curvatura máxima em relação à calibração.</p><input type="range" id="limiteFlex" min="2" max="90" step="1"></div>
+        <div class="campo"><label for="intensidade">Intensidade do motor <output id="oIntensidade"></output></label><p>Força da vibração no alerta.</p><input type="range" id="intensidade" min="0" max="100" step="5"></div>
+        <div class="campo sel"><label>Flex 1<select id="flexModo"><option value="auto">Automático</option><option value="on">Sempre ligado</option><option value="off">Desligado</option></select></label></div>
+        <div class="campo sel"><label>Flex 2<select id="flex2Modo"><option value="auto">Automático</option><option value="on">Sempre ligado</option><option value="off">Desligado</option></select></label></div>
+      </div>
+      <div class="cfg-a">
+        <button class="btn pri" id="bSalvar" disabled>Salvar ajustes</button>
+        <button class="btn" id="bDescartar" disabled>Descartar</button>
+        <button class="btn" id="bReset">Restaurar padrão</button>
+        <span class="versao" id="versao"></span>
+      </div>
+    </form>
+  </section>
+</main>
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+'use strict';
+
+// Posição de cada sensor no colete (metros). x+ = lado direito da pessoa, y = altura a partir do quadril
+// (cintura ≈ 0,20, ombros ≈ 0,58, nuca ≈ 0,70). Todos ficam nas costas.
+// Se os dois flex forem esquerdo/direito (BioSpine), use x: -0.04 no flex1 e x: 0.04 no flex2.
+const POS = {
+  mpu:   { x: 0,     y: 0.50, rotulo: 'MPU-6050', lado: 1 },   // entre as escápulas
+  flex1: { x: 0,     y0: 0.20, y1: 0.43, rotulo: 'Flex', lado: -1 }, // vertical na coluna torácica
+  flex2: { x: 0.055, y0: 0.20, y1: 0.43, rotulo: 'Flex 2', lado: 1 },
+  fsr:   { x: 0,     y: 0.08, rotulo: 'FSR', lado: 1 },        // lombar
+  motor: { x: 0,     y: 0.70, rotulo: 'Motor', lado: 1 },      // nuca
+};
+
+const $ = id => document.getElementById(id);
+const fmt = (v, n = 1) => (v == null || isNaN(v)) ? '--' : Number(v).toFixed(n).replace('.', ',');
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const guardar = (k, v) => { try { localStorage.setItem('colete.' + k, v); } catch (e) {} };
+const ler = k => { try { return localStorage.getItem('colete.' + k); } catch (e) { return null; } };
+
+const S = { on: false, d: null, cfg: null, ultimo: 0, invP: ler('invP') === '1', invR: ler('invR') === '1' };
+
+// ================================================================== WebSocket
+
+let ws = null, wsTimer = 0;
+function conectar() {
+  clearTimeout(wsTimer);
+  const p = location.port ? Number(location.port) + 1 : 81;
+  try {
+    ws = new WebSocket('ws://' + (location.hostname || '192.168.4.1') + ':' + p + '/');
+  } catch (e) { agendar(); return; }
+  ws.onopen = () => { S.ultimo = performance.now(); conexao(true); enviar({ cmd: 'get' }); };
+  ws.onclose = () => { conexao(false); agendar(); };
+  ws.onerror = () => { try { ws.close(); } catch (e) {} };
+  ws.onmessage = ev => {
+    let m;
+    try { m = JSON.parse(ev.data); } catch (e) { return; }
+    S.ultimo = performance.now();
+    if (m.t === 'data') aoDados(m);
+    else if (m.t === 'config') aoConfig(m);
+    else if (m.t === 'evt') toast(m.msg, m.nivel);
+  };
+}
+function agendar() { clearTimeout(wsTimer); wsTimer = setTimeout(conectar, 2000); }
+function enviar(o) {
+  if (ws && ws.readyState === 1) { ws.send(JSON.stringify(o)); return true; }
+  toast('Sem conexão com o colete. Confira o Wi-Fi Colete-Postural.', 'erro');
+  return false;
+}
+function conexao(on) {
+  S.on = on;
+  $('conn').dataset.s = on ? 'on' : 'off';
+  $('connT').textContent = on ? 'Conectado' : 'Desconectado';
+  if (!on) { S.d = null; heroOff(); desenharGrafico(); }
+}
+// Celular que volta do bloqueio pode ficar com o socket "zumbi": sem dados por 4 s, reconecta.
+setInterval(() => {
+  const dt = performance.now() - S.ultimo;
+  $('hero').classList.toggle('stale', S.on && dt > 1500);
+  if (S.on && dt > 4000 && ws) { try { ws.close(); } catch (e) {} }
+}, 500);
+
+// ================================================================== dados
+
+function aoDados(m) {
+  S.d = m;
+  gravar(m);
+  hero(m);
+  sensores(m);
+  desenharGrafico();
+}
+
+const EST = {
+  ok: ['OK', 'Postura dentro do limite'],
+  atencao: ['ATENÇÃO', 'Fora do limite, contando o tempo'],
+  alerta: ['ALERTA', 'Motor vibrando: corrija a postura'],
+};
+
+function mostrarDesvio(txt) {
+  $('desvio').textContent = txt;
+  $('fantasma').textContent = txt.replace(/[\d-]/g, '8'); // segmentos apagados do display
+}
+
+function heroOff() {
+  $('hero').dataset.e = 'off';
+  $('selo').textContent = 'DESCONECTADO';
+  $('sub').textContent = 'Conecte o celular no Wi-Fi Colete-Postural';
+  mostrarDesvio('--');
+  ['mPitch', 'mRoll'].forEach(id => $(id).textContent = '--');
+  $('mPitchD').innerHTML = $('mRollD').innerHTML = '&nbsp;';
+  $('contBar').style.width = '0';
+  $('contT').textContent = '';
+  aviso('');
+  $('bMotor').classList.remove('on');
+  $('hud').dataset.e = 'off';
+  $('hSelo').textContent = 'DESCONECTADO';
+  $('hDesvio').textContent = '--';
+  $('hPR').textContent = 'Conecte no Wi-Fi Colete-Postural';
+}
+
+function aviso(txt, erro) {
+  const a = $('aviso');
+  a.textContent = txt;
+  a.className = 'aviso' + (txt ? ' on' : '') + (erro ? ' erro' : '');
+}
+
+function direcao(v, pos, neg) { return Math.abs(v) < 0.5 ? 'alinhado' : (v > 0 ? pos : neg); }
+
+function hero(m) {
+  const c = S.cfg || {};
+  let e = m.estado, selo, sub;
+  if (m.calibrando) { e = 'calib'; selo = 'CALIBRANDO'; sub = 'Fique parado na postura correta'; }
+  else if (!m.calibrado) { e = 'nocal'; selo = 'SEM CALIBRAÇÃO'; sub = 'O colete só vibra depois de calibrado'; }
+  else [selo, sub] = EST[m.estado] || EST.ok;
+  $('hero').dataset.e = e;
+  $('selo').textContent = selo;
+  $('sub').textContent = sub;
+  mostrarDesvio(m.mpuOk ? fmt(m.desvio) : '--');
+
+  const p = m.pitch * (S.invP ? -1 : 1), r = m.roll * (S.invR ? -1 : 1);
+  $('mPitch').textContent = fmt(Math.abs(p)) + '°';
+  $('mPitchD').textContent = direcao(p, 'à frente', 'para trás');
+  $('mRoll').textContent = fmt(Math.abs(r)) + '°';
+  $('mRollD').textContent = direcao(r, 'à direita', 'à esquerda');
+
+  // painel do modo expandido
+  $('hud').dataset.e = e;
+  $('hSelo').textContent = selo;
+  $('hDesvio').textContent = m.mpuOk ? fmt(m.desvio) : '--';
+  $('hPR').textContent = m.mpuOk ? 'Frente/trás ' + fmt(Math.abs(p)) + '° ' + direcao(p, 'à frente', 'para trás') +
+    ', lateral ' + fmt(Math.abs(r)) + '° ' + direcao(r, 'à direita', 'à esquerda') : 'MPU-6050 sem resposta';
+
+  const tempo = c.tempoMs != null ? c.tempoMs : 3000;
+  let frac = 0, txt = '';
+  if (m.estado === 'atencao' && !m.calibrando) {
+    frac = tempo ? clamp(m.tempoRuimMs / tempo, 0, 1) : 1;
+    txt = 'Vibra em ' + fmt(Math.max(0, tempo - m.tempoRuimMs) / 1000) + ' s';
+  } else if (m.estado === 'alerta' && !m.calibrando) {
+    frac = 1;
+    txt = 'Vibrando há ' + fmt(Math.max(0, m.tempoRuimMs - tempo) / 1000, 0) + ' s';
+  }
+  $('contBar').style.width = (frac * 100) + '%';
+  $('contT').textContent = txt;
+
+  if (!m.mpuOk) aviso('MPU-6050 desconectado. Confira os fios SDA (D21) e SCL (D22).', true);
+  else if (!m.calibrado && !m.calibrando) aviso('Vista o colete, fique na postura correta e toque em Calibrar postura (ou aperte o botão do colete).');
+  else aviso('');
+
+  $('bCalib').disabled = !!m.calibrando;
+  $('bMotor').classList.toggle('on', !!m.motor);
+}
+
+function linha(id, s, val, st) {
+  $(id).dataset.s = s;
+  if (val != null) $('v' + id.slice(1)).innerHTML = val;
+  if (st != null) $('t' + id.slice(1)).textContent = st;
+}
+
+function estadoFlex(det, ativo, modo, calibrado) {
+  if (ativo) return ['on', modo === 'on' ? 'ativo, forçado ligado' : 'ativo na detecção'];
+  if (modo === 'off') return ['idle', 'desligado nos ajustes'];
+  if (det) return ['idle', calibrado ? 'detectado, calibre de novo para usar' : 'detectado, calibre para usar'];
+  return ['off', 'não detectado'];
+}
+
+function sensores(m) {
+  const c = S.cfg || {};
+  linha('sMpu', m.mpuOk ? 'on' : 'off', m.mpuOk ? fmt(m.desvio) + '°' : '--', m.mpuOk ? 'conectado' : 'desconectado');
+
+  let [s, t] = estadoFlex(m.flexDetectado, m.flexAtivo, c.flexModo, m.calibrado);
+  linha('sFlex', s, (m.flexAtivo ? fmt(m.flexPct, 0) + '%' : '') + '<small>leitura ' + m.flex + '</small>', t);
+  $('bFlex').style.width = (m.flexAtivo ? clamp(m.flexPct, 0, 100) : 0) + '%';
+  $('lFlex').style.left = clamp(c.limiteFlex || 15, 0, 100) + '%';
+
+  // flex 2 vem desligado por padrão (o GPIO35 solto "copia" o 34): só mostra se o modo permitir
+  const temF2 = m.flex2Ativo || (c.flex2Modo !== 'off' && (m.flex2Detectado || c.flex2Modo === 'on'));
+  $('sFlex2').classList.toggle('oculto', !temF2);
+  if (temF2) {
+    [s, t] = estadoFlex(m.flex2Detectado, m.flex2Ativo, c.flex2Modo, m.calibrado);
+    linha('sFlex2', s, (m.flex2Ativo ? fmt(m.flex2Pct, 0) + '%' : '') + '<small>leitura ' + m.flex2 + '</small>', t);
+    $('bFlex2').style.width = (m.flex2Ativo ? clamp(m.flex2Pct, 0, 100) : 0) + '%';
+    $('lFlex2').style.left = clamp(c.limiteFlex || 15, 0, 100) + '%';
+  }
+  $('legFlex').classList.toggle('oculto', !(m.flexAtivo || m.flex2Ativo));
+
+  linha('sMotor', m.motor ? 'vib' : 'idle', m.motor ? 'vibrando' : 'parado',
+        'intensidade ' + (c.intensidade != null ? c.intensidade + '%' : '--'));
+
+  const ex = $('extras');
+  ex.classList.toggle('oculto', !m.fsrDetectado);
+  if (m.fsrDetectado) ex.textContent = 'Sensor extra: pressão (FSR) ' + m.fsr + ' de 4095';
+}
+
+// ================================================================== ajustes
+
+const CAMPOS = {
+  limiteGraus: v => fmt(v, 0) + '°',
+  histerese: v => fmt(v) + '°',
+  tempoMs: v => fmt(v / 1000) + ' s',
+  limiteFlex: v => fmt(v, 0) + '%',
+  intensidade: v => fmt(v, 0) + '%',
+};
+let sujo = false;
+
+function aoConfig(m) {
+  S.cfg = m;
+  if (!sujo) preencher(m);
+  $('mLim').textContent = fmt(m.limiteGraus, 0) + '°';
+  $('mTempo').textContent = 'após ' + fmt(m.tempoMs / 1000) + ' s';
+  $('versao').textContent = 'Firmware ' + (m.versao || '?');
+  if (S.d) { hero(S.d); sensores(S.d); }
+}
+
+function preencher(c) {
+  for (const k in CAMPOS) if (c[k] != null) $(k).value = c[k];
+  $('flexModo').value = c.flexModo || 'auto';
+  $('flex2Modo').value = c.flex2Modo || 'off';
+  ajustarHisterese();
+  saidas();
+  marcar(false);
+}
+
+function ajustarHisterese() {
+  const mx = Math.min(+$('limiteGraus').value, +$('limiteFlex').value) - 1;
+  $('histerese').max = mx;
+  if (+$('histerese').value > mx) $('histerese').value = mx;
+}
+
+function saidas() {
+  for (const k in CAMPOS) $('o' + k[0].toUpperCase() + k.slice(1)).textContent = CAMPOS[k](+$(k).value);
+}
+
+function marcar(v) {
+  sujo = v;
+  $('bSalvar').disabled = $('bDescartar').disabled = !v;
+  $('cfgSt').textContent = v ? 'Alterações ainda não salvas' : '';
+}
+
+$('form').addEventListener('input', e => {
+  if (e.target.id === 'limiteGraus' || e.target.id === 'limiteFlex') ajustarHisterese();
+  saidas();
+  marcar(true);
+});
+$('form').addEventListener('change', () => marcar(true));
+$('bSalvar').onclick = () => {
+  // só o que mudou: mensagem curta e não sobrescreve ajuste feito por outro cliente/serial
+  const o = { cmd: 'set' }, c = S.cfg || {};
+  for (const k in CAMPOS) if (+$(k).value !== c[k]) o[k] = +$(k).value;
+  for (const k of ['flexModo', 'flex2Modo']) if ($(k).value !== c[k]) o[k] = $(k).value;
+  if (Object.keys(o).length === 1) { marcar(false); return; }
+  if (enviar(o)) marcar(false);
+};
+$('bDescartar').onclick = () => { marcar(false); if (S.cfg) preencher(S.cfg); };
+$('bReset').onclick = () => {
+  if (confirm('Voltar os ajustes ao padrão? A calibração é mantida.')) { marcar(false); enviar({ cmd: 'reset' }); }
+};
+$('bCalib').onclick = () => enviar({ cmd: 'calib' });
+$('bMotor').onclick = () => enviar({ cmd: 'motor_test' });
+
+// ================================================================== avisos
+
+function toast(msg, nivel) {
+  const box = $('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast ' + (nivel || 'info');
+  t.textContent = msg;
+  box.appendChild(t);
+  while (box.children.length > 3) box.firstChild.remove();
+  setTimeout(() => { t.classList.add('sai'); setTimeout(() => t.remove(), 300); }, 3500);
+}
+
+// ================================================================== gravação / CSV
+// Formato lido por tools/grafico_serial.py (figura do TCC).
+
+const REG = [];
+let t0Reg = null;
+const MAX_REG = 200000; // ~5,5 h a 10 Hz
+
+function gravar(m) {
+  const c = S.cfg || {};
+  if (t0Reg === null) t0Reg = m.uptime;
+  if (REG.length >= MAX_REG) REG.shift();
+  REG.push([((m.uptime - t0Reg) / 1000).toFixed(2), m.desvio, c.limiteGraus, m.pitch, m.roll, m.flex,
+            m.flexPct, c.limiteFlex, m.estado, m.estado === 'alerta' ? 1 : 0].join(','));
+  HIST.push({ t: performance.now(), d: m.mpuOk ? m.desvio : null, f: m.flexAtivo ? m.flexPct : (m.flex2Ativo ? m.flex2Pct : null), e: m.estado });
+  if (REG.length % 10 === 1) {
+    const s = REG.length / 10;
+    $('csvInfo').textContent = REG.length.toLocaleString('pt-BR') + ' amostras, ' +
+      (s < 60 ? fmt(s, 0) + ' s' : Math.floor(s / 60) + ' min ' + Math.floor(s % 60) + ' s') + ' gravados';
+  }
+}
+
+$('bCsv').onclick = () => {
+  if (!REG.length) { toast('Nada gravado ainda: a gravação começa quando o colete conecta.', 'erro'); return; }
+  const txt = 't,desvio,limite,pitch,roll,flex,flexPct,limiteFlex,estado,alerta\n' + REG.join('\n') + '\n';
+  const d = new Date(), z = n => String(n).padStart(2, '0');
+  const nome = 'postura_' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds()) + '.csv';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([txt], { type: 'text/csv' }));
+  a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+};
+$('bLimpar').onclick = () => {
+  if (REG.length && !confirm('Apagar as amostras gravadas nesta sessão?')) return;
+  REG.length = 0; t0Reg = null;
+  $('csvInfo').textContent = 'Nada gravado ainda';
+};
+
+// ================================================================== tema e cores
+
+const TEMAS = ['auto', 'light', 'dark'], NOME_TEMA = { auto: 'automático', light: 'claro', dark: 'escuro' };
+let tema = TEMAS.includes(ler('tema')) ? ler('tema') : 'auto';
+function aplicarTema() {
+  if (tema === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.dataset.theme = tema;
+  $('bTema').textContent = 'Tema: ' + NOME_TEMA[tema];
+  lerCores();
+  document.querySelector('meta[name=theme-color]').content = css(C.bg);
+  desenharGrafico();
+}
+$('bTema').onclick = () => { tema = TEMAS[(TEMAS.indexOf(tema) + 1) % 3]; guardar('tema', tema); aplicarTema(); };
+
+let C = {};
+function lerCores() {
+  const cs = getComputedStyle(document.documentElement);
+  const rgb = n => {
+    const h = cs.getPropertyValue('--' + n).trim().replace('#', '');
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  };
+  ['bg', 'panel', 'panel2', 'ink', 'muted', 'rule', 'edge', 'trace2', 'ok', 'warn', 'bad', 'body', 'fabric', 'hair'].forEach(n => C[n] = rgb(n));
+  C.escuro = C.panel[0] < 128;
+}
+const css = (c, a) => a == null ? 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')' : 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')';
+const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+
+// ================================================================== canvas com DPR
+
+function ajustarCanvas(cv) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  return dpr;
+}
+
+// ================================================================== gráfico (30 s)
+
+const HIST = [];
+const JANELA = 30000;
+const cg = $('cg');
+
+function desenharGrafico() {
+  const dpr = ajustarCanvas(cg);
+  const W = cg.width, H = cg.height;
+  if (!W || !H) return;
+  const g = cg.getContext('2d');
+  const agora = performance.now();
+  while (HIST.length && agora - HIST[0].t > JANELA + 500) HIST.shift();
+  g.clearRect(0, 0, W, H);
+  g.font = (13 * dpr) + 'px system-ui, sans-serif';
+
+  if (!HIST.length) { // estado vazio: diz por que e o que fazer
+    g.fillStyle = css(C.muted); g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(S.on ? 'Aguardando a primeira leitura do colete' : 'Sem leituras: conecte no Wi-Fi Colete-Postural', W / 2, H / 2);
+    return;
+  }
+
+  const c = S.cfg || { limiteGraus: 20, limiteFlex: 15 };
+  const temFlex = HIST.some(p => p.f != null);
+  let mx = Math.max(30, c.limiteGraus * 1.4);
+  for (const p of HIST) { if (p.d != null) mx = Math.max(mx, p.d * 1.12); if (p.f != null) mx = Math.max(mx, p.f * 1.12); }
+  if (temFlex) mx = Math.max(mx, c.limiteFlex * 1.4);
+  mx = Math.ceil(mx / 10) * 10;
+
+  const pl = 34 * dpr, pr = 8 * dpr, pt = 8 * dpr, pb = 22 * dpr;
+  const X = t => pl + (W - pl - pr) * (1 - (agora - t) / JANELA);
+  const Y = v => pt + (H - pt - pb) * (1 - v / mx);
+  g.font = (11 * dpr) + 'px system-ui, sans-serif';
+  g.textBaseline = 'middle';
+
+  // faixas de atenção/alerta: a cor de estado aparece onde o estado aconteceu
+  for (let i = 0; i < HIST.length - 1; i++) {
+    const e = HIST[i].e;
+    if (e === 'ok') continue;
+    g.fillStyle = css(e === 'alerta' ? C.bad : C.warn, e === 'alerta' ? 0.18 : 0.16);
+    g.fillRect(X(HIST[i].t), pt, X(HIST[i + 1].t) - X(HIST[i].t) + 1, H - pt - pb);
+  }
+
+  g.strokeStyle = css(C.rule); g.lineWidth = dpr; g.fillStyle = css(C.muted);
+  g.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const v = mx * i / 4, y = Math.round(Y(v)) + .5;
+    g.beginPath(); g.moveTo(pl, y); g.lineTo(W - pr, y); g.stroke();
+    g.fillText(fmt(v, 0), pl - 6 * dpr, y);
+  }
+  g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  [30, 20, 10, 0].forEach(s => g.fillText(s ? '−' + s + ' s' : 'agora', clamp(X(agora - s * 1000), pl + 14 * dpr, W - pr - 16 * dpr), H - 5 * dpr));
+
+  g.setLineDash([6 * dpr, 5 * dpr]); g.lineWidth = 1.6 * dpr;
+  g.strokeStyle = css(C.bad);
+  g.beginPath(); g.moveTo(pl, Y(c.limiteGraus)); g.lineTo(W - pr, Y(c.limiteGraus)); g.stroke();
+  if (temFlex) {
+    g.strokeStyle = css(C.trace2);
+    g.beginPath(); g.moveTo(pl, Y(c.limiteFlex)); g.lineTo(W - pr, Y(c.limiteFlex)); g.stroke();
+  }
+  g.setLineDash([]);
+
+  const serie = (k, cor, larg, area) => {
+    g.beginPath();
+    let ini = false, x0 = 0, xl = 0;
+    for (const p of HIST) {
+      if (p[k] == null) { ini = false; continue; }
+      const x = X(p.t), y = Y(clamp(p[k], 0, mx));
+      if (!ini) { g.moveTo(x, y); x0 = x; ini = true; } else g.lineTo(x, y);
+      xl = x;
+    }
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    g.strokeStyle = css(cor); g.lineWidth = larg * dpr; g.stroke();
+    if (area && ini) {
+      g.lineTo(xl, Y(0)); g.lineTo(x0, Y(0)); g.closePath();
+      g.fillStyle = css(cor, 0.07); g.fill();
+    }
+  };
+  if (temFlex) serie('f', C.trace2, 2, false);
+  serie('d', C.ink, 2.4, true);
+}
+
+// ================================================================== vista 3D (canvas 2D, projeção própria)
+// Manequim low-poly com o colete. pitch/roll inclinam o tronco a partir do quadril; o flex curva a
+// parte de cima da coluna (ilustrativo: o flex é um número só, em % da calibração).
+
+const YB = 0.16, YT = 0.60;          // a curvatura do flex vai de YB (lombar) até YT (ombros)
+const ALVO_Y = 0.30, DIST = 2.7;     // centro da câmera e distância
+const SE = 0.8;                      // expoente da superelipse (seção mais "quadrada" que elipse)
+const SEC = [ // y, meia-largura, meia-profundidade (m)
+  [0.00, .160, .105], [0.08, .158, .102], [0.18, .140, .092], [0.28, .144, .098], [0.38, .156, .108],
+  [0.47, .166, .114], [0.54, .178, .106], [0.585, .172, .092], [0.625, .125, .072], [0.655, .068, .058],
+  [0.70, .052, .052], [0.77, .048, .048]];
+const VEST_Y0 = 0.04, VEST_Y1 = 0.60;
+const HC = [0, 0.865, 0.012], HR = [0.078, 0.102, 0.092]; // cabeça: centro e raios (+z = frente)
+
+function secAt(y) {
+  if (y <= SEC[0][0]) return SEC[0];
+  for (let i = 0; i < SEC.length - 1; i++) {
+    const a = SEC[i], b = SEC[i + 1];
+    if (y <= b[0]) { const t = (y - a[0]) / (b[0] - a[0]); return [y, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+  }
+  return SEC[SEC.length - 1];
+}
+const fe = v => Math.sign(v) * Math.pow(Math.abs(v), SE);
+const peso = y => { const t = clamp((y - YB) / (YT - YB), 0, 1); return t * t * (3 - 2 * t); };
+function sub(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
+function crs(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+
+const MESH = (() => {
+  const P = [], W = [], F = [];
+  const add = (x, y, z, w) => { P.push(x, y, z); W.push(w); return W.length - 1; };
+  const normal = (v) => { // mesmo cálculo usado no render (diagonais / 3 pontos)
+    const p = i => [P[3 * i], P[3 * i + 1], P[3 * i + 2]];
+    let a, b;
+    if (v.length === 4) { const q = v.map(p); a = sub(q[2], q[0]); b = sub(q[3], q[1]); }
+    else { const n = v.length, q0 = p(v[0]), q1 = p(v[Math.floor(n / 3)]), q2 = p(v[Math.floor(2 * n / 3)]); a = sub(q1, q0); b = sub(q2, q0); }
+    return crs(a, b);
+  };
+  const face = (v, k, ref) => {
+    let cx = 0, cy = 0, cz = 0;
+    for (const i of v) { cx += P[3 * i]; cy += P[3 * i + 1]; cz += P[3 * i + 2]; }
+    cx /= v.length; cy /= v.length; cz /= v.length;
+    const n = normal(v);
+    if (n[0] * (cx - ref[0]) + n[1] * (cy - ref[1]) + n[2] * (cz - ref[2]) < 0) v.reverse();
+    F.push({ v, k });
+  };
+
+  // tronco + pescoço
+  const NS = 20, lv = [];
+  for (let i = 0; i < SEC.length - 1; i++) {
+    lv.push(SEC[i]);
+    const a = SEC[i], b = SEC[i + 1];
+    lv.push([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]);
+  }
+  lv.push(SEC[SEC.length - 1]);
+  const base0 = W.length;
+  for (const [y, a, b] of lv) for (let j = 0; j < NS; j++) {
+    const t = j / NS * 2 * Math.PI;
+    add(a * fe(Math.sin(t)), y, b * fe(Math.cos(t)) * (Math.cos(t) < 0 ? 0.92 : 1), peso(y));
+  }
+  for (let i = 0; i < lv.length - 1; i++) for (let j = 0; j < NS; j++) {
+    const j2 = (j + 1) % NS, ym = (lv[i][0] + lv[i + 1][0]) / 2;
+    face([base0 + i * NS + j, base0 + i * NS + j2, base0 + (i + 1) * NS + j2, base0 + (i + 1) * NS + j],
+         ym > VEST_Y0 && ym < VEST_Y1 ? 'vest' : 'body', [0, ym, 0]);
+  }
+  const fundo = [];
+  for (let j = 0; j < NS; j++) fundo.push(base0 + j);
+  face(fundo, 'body', [0, 0.5, 0]);
+
+  // cabeça (elipsoide)
+  const HC = [0, 0.865, 0.012], HR = [0.078, 0.102, 0.092], NL = 12, NH = 20, h0 = W.length;
+  for (let i = 0; i <= NL; i++) {
+    const la = -Math.PI / 2 + Math.PI * i / NL;
+    for (let j = 0; j < NH; j++) {
+      const lo = j / NH * 2 * Math.PI;
+      add(HC[0] + HR[0] * Math.cos(la) * Math.sin(lo), HC[1] + HR[1] * Math.sin(la), HC[2] + HR[2] * Math.cos(la) * Math.cos(lo), 1);
+    }
+  }
+  for (let i = 0; i < NL; i++) for (let j = 0; j < NH; j++) {
+    const j2 = (j + 1) % NH;
+    face([h0 + i * NH + j, h0 + i * NH + j2, h0 + (i + 1) * NH + j2, h0 + (i + 1) * NH + j], 'body', HC);
+  }
+
+  // braços (tubos)
+  for (const s of [-1, 1]) {
+    const A = [s * 0.198, 0.565, -0.004], B = [s * 0.236, 0.11, 0.03], NA = 10, NLv = 7, a0 = W.length;
+    for (let i = 0; i <= NLv; i++) {
+      const t = i / NLv, r = 0.05 - 0.016 * t, c = [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t];
+      for (let j = 0; j < NA; j++) { const an = j / NA * 2 * Math.PI; add(c[0] + r * Math.sin(an), c[1], c[2] + r * 0.92 * Math.cos(an), 1); }
+    }
+    for (let i = 0; i < NLv; i++) for (let j = 0; j < NA; j++) {
+      const j2 = (j + 1) % NA, t = (i + 0.5) / NLv;
+      face([a0 + i * NA + j, a0 + i * NA + j2, a0 + (i + 1) * NA + j2, a0 + (i + 1) * NA + j], 'body',
+           [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t]);
+    }
+    const mao = [];
+    for (let j = 0; j < NA; j++) mao.push(a0 + NLv * NA + j);
+    face(mao, 'body', [B[0], B[1] + 0.2, B[2]]);
+  }
+  return { P: new Float32Array(P), W: new Float32Array(W), F, n: W.length };
+})();
+
+// estado animado (interpolado entre as mensagens de 10 Hz)
+const V = { p: 0, r: 0, b: 0, yaw: -0.5, el: 0.2, yawA: -0.5, elA: 0.2 };
+const VISTAS = { costas: [-0.5, 0.2], lado: [-Math.PI / 2, 0.12], frente: [Math.PI - 0.4, 0.12] };
+
+function prepararK(p, r, b, W, H) {
+  const sp = Math.sin(p), cp = Math.cos(p), sr = Math.sin(r), cr = Math.cos(r);
+  const sy = Math.sin(V.yaw), cy = Math.cos(V.yaw), se = Math.sin(V.el), ce = Math.cos(V.el);
+  const F = Math.min(H, W * 1.55) * 0.78 * DIST / 1.35; // largura limita para sobrar espaço aos rótulos
+  // expandido em tela alta: desce o manequim para a cabeça não ficar sob o painel do canto
+  return { sp, cp, sr, cr, sy, cy, se, ce, b, F, cx: W / 2, cyS: H * (EXP && H > W ? 0.57 : 0.5) };
+}
+// corpo -> mundo -> câmera. out = [cx, cy, cz, sx, sy]
+function xf(x, y, z, w, out, k) {
+  if (k.b && w > 0) { // curvatura do flex: gira em torno do pivô (0, YB, 0), proporcional ao peso
+    const a = k.b * w, ca = Math.cos(a), sa = Math.sin(a), yy = y - YB;
+    const y2 = yy * ca - z * sa; z = yy * sa + z * ca; y = y2 + YB;
+  }
+  const x1 = x * k.cr + y * k.sr, y1 = -x * k.sr + y * k.cr;        // lateral (topo -> +x)
+  const y2 = y1 * k.cp - z * k.sp, z1 = y1 * k.sp + z * k.cp;        // frente (topo -> +z)
+  return cam(x1, y2, z1, out, k);
+}
+function cam(x, y, z, out, k) {
+  const ty = y - ALVO_Y;
+  const x1 = x * k.cy - z * k.sy, z1 = x * k.sy + z * k.cy;
+  const y1 = ty * k.ce + z1 * k.se, z2 = -ty * k.se + z1 * k.ce + DIST;
+  out[0] = x1; out[1] = y1; out[2] = z2;
+  out[3] = k.cx + x1 * k.F / z2; out[4] = k.cyS - y1 * k.F / z2;
+  return out;
+}
+
+const NV = MESH.n;
+const CA = new Float32Array(NV * 3), SA = new Float32Array(NV * 2);
+const tmp = [0, 0, 0, 0, 0];
+const LUZ = (() => { const l = [-0.45, 0.65, -0.62], n = Math.hypot(...l); return l.map(v => v / n); })();
+const ordem = [], prof = new Float32Array(MESH.F.length), luz = new Float32Array(MESH.F.length);
+
+function projetarMalha(k) {
+  const P = MESH.P, Wt = MESH.W;
+  for (let i = 0; i < NV; i++) {
+    xf(P[3 * i], P[3 * i + 1], P[3 * i + 2], Wt[i], tmp, k);
+    CA[3 * i] = tmp[0]; CA[3 * i + 1] = tmp[1]; CA[3 * i + 2] = tmp[2];
+    SA[2 * i] = tmp[3]; SA[2 * i + 1] = tmp[4];
+  }
+  ordem.length = 0;
+  const Fs = MESH.F;
+  for (let f = 0; f < Fs.length; f++) {
+    const v = Fs[f].v, n = v.length;
+    let ax, ay, az, bx, by, bz;
+    if (n === 4) {
+      ax = CA[3 * v[2]] - CA[3 * v[0]]; ay = CA[3 * v[2] + 1] - CA[3 * v[0] + 1]; az = CA[3 * v[2] + 2] - CA[3 * v[0] + 2];
+      bx = CA[3 * v[3]] - CA[3 * v[1]]; by = CA[3 * v[3] + 1] - CA[3 * v[1] + 1]; bz = CA[3 * v[3] + 2] - CA[3 * v[1] + 2];
+    } else {
+      const i0 = v[0], i1 = v[Math.floor(n / 3)], i2 = v[Math.floor(2 * n / 3)];
+      ax = CA[3 * i1] - CA[3 * i0]; ay = CA[3 * i1 + 1] - CA[3 * i0 + 1]; az = CA[3 * i1 + 2] - CA[3 * i0 + 2];
+      bx = CA[3 * i2] - CA[3 * i0]; by = CA[3 * i2 + 1] - CA[3 * i0 + 1]; bz = CA[3 * i2 + 2] - CA[3 * i0 + 2];
+    }
+    // câmera usa y para cima e z para dentro da tela: o produto vetorial muda de mão, então inverte
+    let nx = -(ay * bz - az * by), ny = -(az * bx - ax * bz), nz = -(ax * by - ay * bx);
+    let cx = 0, cy = 0, cz = 0;
+    for (let j = 0; j < n; j++) { cx += CA[3 * v[j]]; cy += CA[3 * v[j] + 1]; cz += CA[3 * v[j] + 2]; }
+    cx /= n; cy /= n; cz /= n;
+    if (nx * cx + ny * cy + nz * cz >= 0) continue; // virada para trás
+    const nl = Math.hypot(nx, ny, nz) || 1;
+    nx /= nl; ny /= nl; nz /= nl;
+    luz[f] = 0.34 + 0.66 * Math.max(0, nx * LUZ[0] + ny * LUZ[1] + nz * LUZ[2]);
+    prof[f] = cz;
+    ordem.push(f);
+  }
+  ordem.sort((a, b) => prof[b] - prof[a]);
+}
+
+function caminho(g, v) {
+  g.beginPath();
+  g.moveTo(SA[2 * v[0]], SA[2 * v[0] + 1]);
+  for (let j = 1; j < v.length; j++) g.lineTo(SA[2 * v[j]], SA[2 * v[j] + 1]);
+  g.closePath();
+}
+
+function desenharMalha(g, cores, solida) {
+  const Fs = MESH.F;
+  g.lineJoin = 'round';
+  g.lineWidth = 1;
+  for (const f of ordem) {
+    caminho(g, Fs[f].v);
+    let s;
+    if (solida) s = solida;
+    else { const b = cores[Fs[f].k], l = luz[f]; s = 'rgb(' + (b[0] * l | 0) + ',' + (b[1] * l | 0) + ',' + (b[2] * l | 0) + ')'; }
+    g.fillStyle = s; g.fill();
+    g.strokeStyle = s; g.stroke(); // cobre as frestas do anti-aliasing
+  }
+}
+
+// ponto na superfície das costas (para os sensores) e se está virado para a câmera
+function costas(x, y, off) {
+  const s = secAt(y), a = s[1], b = s[2] * 0.92;
+  const c = Math.pow(Math.min(1, Math.abs(x) / a), 1 / SE);
+  return [x, y, -b * Math.pow(Math.sqrt(Math.max(0, 1 - c * c)), SE) - (off || 0.007)];
+}
+function pontoTela(x, y, k) {
+  const p = costas(x, y), w = peso(y);
+  const a = xf(p[0], p[1], p[2], w, [0, 0, 0, 0, 0], k);
+  const q = xf(p[0] + x * 0.4, p[1], p[2] - 0.06, w, [0, 0, 0, 0, 0], k);
+  const vis = (q[0] - a[0]) * a[0] + (q[1] - a[1]) * a[1] + (q[2] - a[2]) * a[2] < 0;
+  return { x: a[3], y: a[4], z: a[2], vis, esc: k.F / a[2] };
+}
+
+const ROT = []; // rótulos já desenhados no quadro (evita sobreposição)
+let EXP = false; // modo expandido: rótulo com o nome em cima e a leitura grande embaixo
+function rotulo(g, nome, valor, p, lado, ativo, dpr) {
+  if (!p.vis) return;
+  const dois = EXP && valor;
+  const fN = '600 ' + ((dois ? 13 : 12) * dpr) + 'px system-ui, sans-serif';
+  const fV = /[a-z]/i.test(valor) ? '650 ' + (17 * dpr) + 'px system-ui, sans-serif'
+                                  : '700 ' + (24 * dpr) + 'px "Colete Segmentos", system-ui, sans-serif';
+  let w, h, txt = valor ? nome + ' ' + valor : nome;
+  if (dois) {
+    g.font = fN; const a = g.measureText(nome).width;
+    g.font = fV; w = Math.max(a, g.measureText(valor).width) + 20 * dpr; h = 54 * dpr;
+  } else {
+    g.font = fN; w = g.measureText(txt).width + 14 * dpr; h = 24 * dpr;
+  }
+  const dx = lado * (28 * dpr + p.esc * 0.03);
+  const x = clamp(p.x + dx + (lado < 0 ? -w : 0), 4 * dpr, g.canvas.width - w - 4 * dpr);
+  let y = p.y - h / 2;
+  for (let i = 0; i < 6 && ROT.some(r => x < r[0] + r[2] && r[0] < x + w && y < r[1] + r[3] + 3 * dpr && r[1] < y + h + 3 * dpr); i++) y += h + 4 * dpr;
+  y = clamp(y, 4 * dpr, g.canvas.height - h - 4 * dpr); // nunca sai do canvas
+  ROT.push([x, y, w, h]);
+  g.strokeStyle = css(ativo ? C.ink : C.edge); g.lineWidth = 1.2 * dpr;
+  g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(lado < 0 ? x + w : x, y + h / 2); g.stroke();
+  g.fillStyle = css(C.panel);
+  g.beginPath();
+  if (g.roundRect) g.roundRect(x, y, w, h, 4 * dpr); else g.rect(x, y, w, h);
+  g.fill(); g.stroke();
+  if (dois) {
+    g.textAlign = 'left'; g.textBaseline = 'top';
+    g.font = fN; g.fillStyle = css(C.muted); g.fillText(nome, x + 10 * dpr, y + 7 * dpr);
+    g.font = fV; g.fillStyle = css(ativo ? C.ink : C.muted); g.fillText(valor, x + 10 * dpr, y + 25 * dpr);
+  } else {
+    g.fillStyle = css(ativo ? C.ink : C.muted); g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(txt, x + w / 2, y + h / 2 + 0.5);
+  }
+}
+
+function corNivel(pct, lim) {
+  const r = pct / (lim || 15);
+  return r < 0.7 ? C.ok : r < 1 ? C.warn : C.bad;
+}
+
+function desenharFlex(g, pos, det, ativo, modo, pct, k, dpr, lim, leitura) {
+  const N = 12, pts = [];
+  let vis = false, esc = 0;
+  for (let i = 0; i < N; i++) {
+    const p = pontoTela(pos.x, pos.y0 + (pos.y1 - pos.y0) * i / (N - 1), k);
+    pts.push(p); vis = vis || p.vis; esc = Math.max(esc, p.esc);
+  }
+  const larg = Math.max(4 * dpr, esc * 0.02);
+  const linha = (cor, w, tr) => {
+    g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y));
+    g.setLineDash(tr ? [larg * 0.9, larg * 0.8] : []);
+    g.strokeStyle = cor; g.lineWidth = w; g.lineCap = 'round'; g.stroke();
+  };
+  g.globalAlpha = vis ? 1 : 0.3;
+  if (ativo) {
+    linha(css(C.ink), larg, false);                       // sensor ligado: tira escura
+    linha(css(corNivel(pct, lim)), larg * 0.45, false);   // miolo na cor do nível frente ao limite
+  } else {
+    linha(css(C.edge), larg * 0.7, true);                 // desligado ou ausente: tracejado
+  }
+  g.setLineDash([]); g.globalAlpha = 1;
+  const meio = pts[Math.floor(N / 2)];
+  meio.vis = vis && meio.vis;
+  // sem conexão não há como saber o estado do sensor: só o nome
+  const st = !S.on ? '' : ativo ? fmt(pct, 0) + '%' : det ? (modo === 'off' ? 'desligado' : 'sem calibrar') : 'desconectado';
+  rotulo(g, EXP && S.on ? pos.rotulo + ', leitura ' + leitura : pos.rotulo, st, meio, pos.lado, ativo, dpr);
+}
+
+function desenharMarcadores(g, m, k, dpr, t) {
+  const c = S.cfg || {};
+  const on = !!m;
+  m = m || {};
+  ROT.length = 0;
+  if (EXP) { // o painel do canto conta como ocupado: rótulos desviam dele
+    const h = $('hud').getBoundingClientRect(), pr = $('palco').getBoundingClientRect();
+    ROT.push([(h.left - pr.left) * dpr, (h.top - pr.top) * dpr, h.width * dpr, h.height * dpr]);
+  }
+  desenharFlex(g, POS.flex1, on && m.flexDetectado, on && m.flexAtivo, c.flexModo, m.flexPct, k, dpr, c.limiteFlex, m.flex);
+  if (on && (m.flex2Ativo || (c.flex2Modo !== 'off' && (m.flex2Detectado || c.flex2Modo === 'on'))))
+    desenharFlex(g, POS.flex2, m.flex2Detectado, m.flex2Ativo, c.flex2Modo, m.flex2Pct, k, dpr, c.limiteFlex, m.flex2);
+
+  // MPU: placa entre as escápulas, com o LED de estado (verde ok, vermelho sem resposta)
+  const mp = POS.mpu, ok = on && m.mpuOk;
+  const cs = [[-.032, -.024], [.032, -.024], [.032, .024], [-.032, .024]].map(d => pontoTela(mp.x + d[0], mp.y + d[1], k));
+  const pc = pontoTela(mp.x, mp.y, k);
+  g.globalAlpha = pc.vis ? 1 : 0.3;
+  g.beginPath(); cs.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)); g.closePath();
+  g.fillStyle = ok ? css(C.ink) : css(C.panel2); g.fill();
+  g.strokeStyle = css(ok ? C.ink : C.edge); g.lineWidth = 1.5 * dpr; g.setLineDash(ok ? [] : [3 * dpr, 3 * dpr]); g.stroke(); g.setLineDash([]);
+  g.fillStyle = css(on ? (ok ? C.ok : C.bad) : C.edge);
+  g.beginPath(); g.arc(pc.x, pc.y, Math.max(2 * dpr, pc.esc * 0.007), 0, 7); g.fill();
+  g.globalAlpha = 1;
+  rotulo(g, EXP ? mp.rotulo + ', desvio' : mp.rotulo, !on ? '' : !ok ? 'sem resposta' : EXP ? fmt(m.desvio) + '°' : '', pc, mp.lado, ok, dpr);
+
+  // FSR (só se detectado): opacidade acompanha a pressão
+  if (on && m.fsrDetectado) {
+    const p = pontoTela(POS.fsr.x, POS.fsr.y, k), int = clamp(m.fsr / 2000, 0.2, 1);
+    g.globalAlpha = p.vis ? 1 : 0.3;
+    g.fillStyle = css(C.ink, int);
+    g.beginPath(); g.ellipse(p.x, p.y, p.esc * 0.026, p.esc * 0.02, 0, 0, 7); g.fill();
+    g.globalAlpha = 1;
+    rotulo(g, EXP ? POS.fsr.rotulo + ', pressão' : POS.fsr.rotulo, String(m.fsr), p, POS.fsr.lado, true, dpr);
+  }
+
+  // motor na nuca: ondas só enquanto vibra de verdade
+  const mo = pontoTela(POS.motor.x, POS.motor.y, k), vib = on && m.motor;
+  const r = Math.max(4 * dpr, mo.esc * 0.017);
+  g.globalAlpha = mo.vis ? 1 : 0.3;
+  if (vib) {
+    for (let i = 0; i < 3; i++) {
+      const f = ((t / 700) + i / 3) % 1;
+      g.strokeStyle = css(C.warn, (1 - f) * 0.95); g.lineWidth = 2.2 * dpr;
+      g.beginPath(); g.arc(mo.x, mo.y, r * (1.2 + f * 2.6), 0, 7); g.stroke();
+    }
+  }
+  const jx = vib ? (Math.random() - 0.5) * 2 * dpr : 0;
+  g.fillStyle = vib ? css(C.warn) : css(C.panel2);
+  g.beginPath(); g.arc(mo.x + jx, mo.y, r, 0, 7); g.fill();
+  g.strokeStyle = css(vib ? C.ink : C.edge); g.lineWidth = 1.5 * dpr; g.stroke();
+  g.globalAlpha = 1;
+  rotulo(g, POS.motor.rotulo, vib ? 'vibrando' : (EXP && on ? 'parado' : ''), mo, POS.motor.lado, vib, dpr);
+}
+
+const c3 = $('c3d'), g3 = c3.getContext('2d');
+const fantasma = document.createElement('canvas');
+const gf = fantasma.getContext('2d');
+
+function corColete(m) {
+  if (!m || !m.calibrado || m.calibrando) return C.fabric;
+  const e = m.estado === 'alerta' ? C.bad : m.estado === 'atencao' ? C.warn : C.ok;
+  return mix(C.fabric, e, m.estado === 'alerta' ? 0.72 + 0.2 * Math.sin(performance.now() / 90) : 0.62);
+}
+
+function render(dt, t) {
+  const dpr = ajustarCanvas(c3);
+  const W = c3.width, H = c3.height;
+  if (!W || !H) return;
+  const m = S.on ? S.d : null;
+
+  // alvos e suavização (os dados chegam a 10 Hz; a animação roda a ~30 fps)
+  const rad = Math.PI / 180;
+  let tp = 0, tr = 0, tb = 0;
+  if (m && m.mpuOk) {
+    tp = clamp(m.pitch, -75, 75) * rad * (S.invP ? -1 : 1);
+    tr = clamp(m.roll, -60, 60) * rad * (S.invR ? -1 : 1);
+  }
+  if (m) {
+    const f = Math.max(m.flexAtivo ? m.flexPct : 0, m.flex2Ativo ? m.flex2Pct : 0);
+    tb = Math.min(f, 40) * 0.6 * rad;
+  }
+  const a = 1 - Math.exp(-dt / 0.12), av = 1 - Math.exp(-dt / 0.22);
+  V.p += (tp - V.p) * a; V.r += (tr - V.r) * a; V.b += (tb - V.b) * a;
+  if (!arrastando) { V.yaw += (V.yawA - V.yaw) * av; V.el += (V.elA - V.el) * av; }
+
+  g3.clearRect(0, 0, W, H);
+  const k = prepararK(V.p, V.r, V.b, W, H);
+
+  // suporte do manequim
+  const base = [];
+  for (let i = 0; i < 28; i++) { const an = i / 28 * 2 * Math.PI; cam(0.17 * Math.cos(an), -0.36, 0.17 * Math.sin(an), tmp, k); base.push([tmp[3], tmp[4]]); }
+  g3.fillStyle = css(C.rule);
+  g3.beginPath(); base.forEach((p, i) => i ? g3.lineTo(p[0], p[1]) : g3.moveTo(p[0], p[1])); g3.closePath(); g3.fill();
+  cam(0, -0.02, 0, tmp, k); const ax = tmp[3], ay = tmp[4];
+  cam(0, -0.36, 0, tmp, k);
+  g3.strokeStyle = css(C.edge); g3.lineWidth = Math.max(3 * dpr, k.F / tmp[2] * 0.022); g3.lineCap = 'round';
+  g3.beginPath(); g3.moveTo(ax, ay); g3.lineTo(tmp[3], tmp[4]); g3.stroke();
+
+  // silhueta da postura calibrada
+  const desvio = Math.abs(V.p) + Math.abs(V.r) + V.b;
+  if (m && m.calibrado && desvio > 2 * rad) {
+    if (fantasma.width !== W || fantasma.height !== H) { fantasma.width = W; fantasma.height = H; }
+    gf.clearRect(0, 0, W, H);
+    projetarMalha(prepararK(0, 0, 0, W, H));
+    desenharMalha(gf, null, css(C.ink));
+    g3.globalAlpha = C.escuro ? 0.2 : 0.12;
+    g3.drawImage(fantasma, 0, 0);
+    g3.globalAlpha = 1;
+  }
+
+  projetarMalha(k);
+  desenharMalha(g3, { body: C.body, vest: corColete(m) });
+  desenharMarcadores(g3, m, k, dpr, t);
+}
+
+// laço: ~30 fps, pausa com a aba oculta, com o 3D fechado ou fora da tela
+let raf = 0, ultimoQ = 0, visivel3d = true, aberto3d = ler('3d') !== '0';
+function laco(t) {
+  raf = requestAnimationFrame(laco);
+  if (t - ultimoQ < 32) return;
+  const dt = Math.min(0.1, (t - ultimoQ) / 1000);
+  ultimoQ = t;
+  render(dt, t);
+}
+function atualizarLaco() {
+  const rodar = aberto3d && visivel3d && !document.hidden;
+  if (rodar && !raf) { ultimoQ = performance.now(); raf = requestAnimationFrame(laco); }
+  if (!rodar && raf) { cancelAnimationFrame(raf); raf = 0; }
+}
+document.addEventListener('visibilitychange', atualizarLaco);
+if ('IntersectionObserver' in window)
+  new IntersectionObserver(es => { visivel3d = es[0].isIntersecting; atualizarLaco(); }).observe($('palco'));
+
+function abrir3d(v) {
+  aberto3d = v;
+  guardar('3d', v ? '1' : '0');
+  $('viz').classList.toggle('fechado', !v);
+  $('b3d').textContent = v ? 'Ocultar 3D' : 'Mostrar 3D';
+  $('b3d').setAttribute('aria-expanded', v);
+  atualizarLaco();
+}
+$('b3d').onclick = () => abrir3d(!aberto3d);
+
+// expandir: o painel do 3D cobre a tela (e pede tela cheia onde o navegador deixa; o iPhone não deixa)
+function expandir(v) {
+  EXP = v;
+  const viz = $('viz'), b = $('bExpandir');
+  viz.classList.toggle('expandido', v);
+  document.body.classList.toggle('travado', v);
+  b.setAttribute('aria-pressed', v);
+  b.querySelector('span').textContent = v ? 'Fechar' : 'Expandir';
+  if (v && viz.requestFullscreen && !document.fullscreenElement) viz.requestFullscreen().catch(() => {});
+  if (!v && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  b.focus();
+}
+$('bExpandir').onclick = () => expandir(!EXP);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && EXP) expandir(false); });
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && EXP) expandir(false); });
+
+$('vistas').onclick = e => {
+  const v = e.target.dataset && e.target.dataset.v;
+  if (!v) return;
+  [V.yawA, V.elA] = VISTAS[v];
+  // gira pelo caminho mais curto
+  while (V.yawA - V.yaw > Math.PI) V.yawA -= 2 * Math.PI;
+  while (V.yaw - V.yawA > Math.PI) V.yawA += 2 * Math.PI;
+  for (const b of $('vistas').children) b.setAttribute('aria-pressed', b === e.target);
+};
+
+// arrastar para girar
+let arrastando = false, px = 0, py = 0;
+const palco = $('palco');
+palco.addEventListener('pointerdown', e => { arrastando = true; px = e.clientX; py = e.clientY; palco.setPointerCapture(e.pointerId); palco.style.cursor = 'grabbing'; });
+palco.addEventListener('pointermove', e => {
+  if (!arrastando) return;
+  V.yaw -= (e.clientX - px) * 0.01;
+  V.el = clamp(V.el + (e.clientY - py) * 0.006, -0.35, 0.9);
+  V.yawA = V.yaw; V.elA = V.el;
+  px = e.clientX; py = e.clientY;
+  for (const b of $('vistas').children) b.setAttribute('aria-pressed', 'false');
+});
+const solta = () => { arrastando = false; palco.style.cursor = ''; };
+palco.addEventListener('pointerup', solta);
+palco.addEventListener('pointercancel', solta);
+
+$('invP').checked = S.invP;
+$('invR').checked = S.invR;
+$('invP').onchange = e => { S.invP = e.target.checked; guardar('invP', S.invP ? '1' : '0'); if (S.d) hero(S.d); };
+$('invR').onchange = e => { S.invR = e.target.checked; guardar('invR', S.invR ? '1' : '0'); if (S.d) hero(S.d); };
+
+// ================================================================== início
+
+const mq = matchMedia('(prefers-color-scheme: dark)');
+const trocaSistema = () => { if (tema === 'auto') aplicarTema(); };
+if (mq.addEventListener) mq.addEventListener('change', trocaSistema); else if (mq.addListener) mq.addListener(trocaSistema);
+window.addEventListener('resize', desenharGrafico);
+
+aplicarTema();
+if (!g3) { $('viz').classList.add('oculto'); aberto3d = false; } else abrir3d(aberto3d);
+heroOff();
+$('hero').dataset.e = 'off';
+$('selo').textContent = 'CONECTANDO';
+$('sub').textContent = 'Procurando o colete na rede';
+saidas();
+conectar();
+</script>
+</body>
+</html>
