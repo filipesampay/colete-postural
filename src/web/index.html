@@ -417,7 +417,7 @@ function conectar() {
 function agendar() { clearTimeout(wsTimer); wsTimer = setTimeout(conectar, 2000); }
 function enviar(o) {
   if (ws && ws.readyState === 1) { ws.send(JSON.stringify(o)); return true; }
-  toast('Sem conexão com o colete. Confira o Wi-Fi Colete-Postural.', 'erro');
+  toast('Sem conexão com o colete. Confira o Wi-Fi BioSpine.', 'erro');
   return false;
 }
 function conexao(on) {
@@ -457,7 +457,7 @@ function mostrarDesvio(txt) {
 function heroOff() {
   $('hero').dataset.e = 'off';
   $('selo').textContent = 'DESCONECTADO';
-  $('sub').textContent = 'Conecte o celular no Wi-Fi Colete-Postural';
+  $('sub').textContent = 'Conecte o celular no Wi-Fi BioSpine';
   mostrarDesvio('--');
   ['mPitch', 'mRoll'].forEach(id => $(id).textContent = '--');
   $('mPitchD').innerHTML = $('mRollD').innerHTML = '&nbsp;';
@@ -468,7 +468,7 @@ function heroOff() {
   $('hud').dataset.e = 'off';
   $('hSelo').textContent = 'DESCONECTADO';
   $('hDesvio').textContent = '--';
-  $('hPR').textContent = 'Conecte no Wi-Fi Colete-Postural';
+  $('hPR').textContent = 'Conecte no Wi-Fi BioSpine';
 }
 
 function aviso(txt, erro) {
@@ -735,7 +735,7 @@ function desenharGrafico() {
 
   if (!HIST.length) { // estado vazio: diz por que e o que fazer
     g.fillStyle = css(C.muted); g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(S.on ? 'Aguardando a primeira leitura do colete' : 'Sem leituras: conecte no Wi-Fi Colete-Postural', W / 2, H / 2);
+    g.fillText(S.on ? 'Aguardando a primeira leitura do colete' : 'Sem leituras: conecte no Wi-Fi BioSpine', W / 2, H / 2);
     return;
   }
 
@@ -868,7 +868,7 @@ const MESH = (() => {
   face(fundo, 'body', [0, 0.5, 0]);
 
   // cabeça (elipsoide)
-  const HC = [0, 0.865, 0.012], HR = [0.078, 0.102, 0.092], NL = 12, NH = 20, h0 = W.length;
+  const NL = 14, NH = 24, h0 = W.length;
   for (let i = 0; i <= NL; i++) {
     const la = -Math.PI / 2 + Math.PI * i / NL;
     for (let j = 0; j < NH; j++) {
@@ -878,7 +878,12 @@ const MESH = (() => {
   }
   for (let i = 0; i < NL; i++) for (let j = 0; j < NH; j++) {
     const j2 = (j + 1) % NH;
-    face([h0 + i * NH + j, h0 + i * NH + j2, h0 + (i + 1) * NH + j2, h0 + (i + 1) * NH + j], 'body', HC);
+    const q = [h0 + i * NH + j, h0 + i * NH + j2, h0 + (i + 1) * NH + j2, h0 + (i + 1) * NH + j];
+    let cy = 0, cz = 0;
+    for (const v of q) { cy += P[3 * v + 1] / 4; cz += P[3 * v + 2] / 4; }
+    // cabelo: cobre o topo e desce pela nuca; na frente a linha fica alta (testa). Diferencia frente e costas.
+    const dy = (cy - HC[1]) / HR[1], dz = (cz - HC[2]) / HR[2];
+    face(q, dy > -0.1 + 0.65 * dz ? 'hair' : 'body', HC); // frente: testa (0,55); lados: orelha; costas: nuca (-0,75)
   }
 
   // braços (tubos)
@@ -956,8 +961,8 @@ function projetarMalha(k) {
       ax = CA[3 * i1] - CA[3 * i0]; ay = CA[3 * i1 + 1] - CA[3 * i0 + 1]; az = CA[3 * i1 + 2] - CA[3 * i0 + 2];
       bx = CA[3 * i2] - CA[3 * i0]; by = CA[3 * i2 + 1] - CA[3 * i0 + 1]; bz = CA[3 * i2 + 2] - CA[3 * i0 + 2];
     }
-    // câmera usa y para cima e z para dentro da tela: o produto vetorial muda de mão, então inverte
-    let nx = -(ay * bz - az * by), ny = -(az * bx - ax * bz), nz = -(ax * by - ay * bx);
+    // a câmera só gira o mundo (não espelha): a normal continua apontando para fora, como na montagem da malha
+    let nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
     let cx = 0, cy = 0, cz = 0;
     for (let j = 0; j < n; j++) { cx += CA[3 * v[j]]; cy += CA[3 * v[j] + 1]; cz += CA[3 * v[j] + 2]; }
     cx /= n; cy /= n; cz /= n;
@@ -1131,6 +1136,26 @@ function desenharMarcadores(g, m, k, dpr, t) {
   rotulo(g, POS.motor.rotulo, vib ? 'vibrando' : (EXP && on ? 'parado' : ''), mo, POS.motor.lado, vib, dpr);
 }
 
+// olhos na frente da cabeça: só aparecem com o rosto virado para a câmera
+function desenharOlhos(g, k, dpr) {
+  const a = [0, 0, 0, 0, 0], b = [0, 0, 0, 0, 0];
+  for (const s of [-1, 1]) {
+    const x = s * 0.029, y = HC[1] + 0.014;
+    const r = 1 - (x / HR[0]) ** 2 - ((y - HC[1]) / HR[1]) ** 2;
+    const z = HC[2] + HR[2] * Math.sqrt(r) + 0.002;
+    const n = [x / HR[0] ** 2, (y - HC[1]) / HR[1] ** 2, (z - HC[2]) / HR[2] ** 2], nl = Math.hypot(...n);
+    xf(x, y, z, 1, a, k);
+    xf(x + n[0] / nl * 0.05, y + n[1] / nl * 0.05, z + n[2] / nl * 0.05, 1, b, k);
+    const face = (b[0] - a[0]) * a[0] + (b[1] - a[1]) * a[1] + (b[2] - a[2]) * a[2];
+    if (face >= 0) continue;
+    // achata o olho conforme o rosto vira de lado (perfil)
+    const lado = Math.min(1, -face / (0.05 * Math.hypot(a[0], a[1], a[2])) * 1.4);
+    const esc = k.F / a[2];
+    g.fillStyle = css(C.hair);
+    g.beginPath(); g.ellipse(a[3], a[4], Math.max(1.2 * dpr, esc * 0.011 * lado), Math.max(1.2 * dpr, esc * 0.0075), 0, 0, 7); g.fill();
+  }
+}
+
 const c3 = $('c3d'), g3 = c3.getContext('2d');
 const fantasma = document.createElement('canvas');
 const gf = fantasma.getContext('2d');
@@ -1188,7 +1213,8 @@ function render(dt, t) {
   }
 
   projetarMalha(k);
-  desenharMalha(g3, { body: C.body, vest: corColete(m) });
+  desenharMalha(g3, { body: C.body, vest: corColete(m), hair: C.hair });
+  desenharOlhos(g3, k, dpr);
   desenharMarcadores(g3, m, k, dpr, t);
 }
 
