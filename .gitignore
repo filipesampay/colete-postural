@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 postura_*.csv
 postura_*.png
+# imagens geradas por Documentação/gerar_figuras.py (a fonte são os blocos Mermaid dos .md)
+Documentação/figuras/
+# dependências do gerador de PDF (Documentação/gerar_pdf.py instala com npm ci)
+Documentação/ferramentas/node_modules/

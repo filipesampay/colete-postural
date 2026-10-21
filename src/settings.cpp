@@ -1,10 +1,18 @@
+// Leitura e gravação da configuração e da calibração na NVS (Preferences).
+// Chaves no namespace "colete" (tabela em Documentação/referencia/settings.md):
+//   config:     limite, hist, tempo, flexlim, motor, flexmodo, flex2modo
+//   calibração: cal_ok, g0x, g0y, g0z, flex0, flex20
+// Os nomes das chaves são curtos de propósito (a NVS aceita no máximo 15 caracteres).
+// Mudar um nome = perder o valor salvo nas placas já gravadas (volta ao padrão).
+// Documentação: Documentação/referencia/settings.md
 #include "settings.h"
 
 #include <Preferences.h>
 #include <string.h>
 
-static const char* NAMESPACE = "colete";
+static const char* NAMESPACE = "colete";  // "pasta" da NVS onde ficam todas as chaves do colete
 
+// Modo -> texto (serial, app e JSON de config).
 const char* modoNome(ModoSensor m) {
   switch (m) {
     case MODO_ON:
@@ -16,6 +24,7 @@ const char* modoNome(ModoSensor m) {
   }
 }
 
+// Texto -> modo. Aceita sinônimos ("1"/"true", "0"/"false") para facilitar a digitação na serial.
 bool modoDeTexto(const char* txt, ModoSensor* m) {
   if (!strcmp(txt, "on") || !strcmp(txt, "1") || !strcmp(txt, "true")) {
     *m = MODO_ON;
@@ -29,6 +38,7 @@ bool modoDeTexto(const char* txt, ModoSensor* m) {
   return true;
 }
 
+// Valores de fábrica (primeiro boot, "reset" da serial, "Restaurar padrão" do app).
 Config configPadrao() {
   Config c;
   c.params = paramsPadrao();
@@ -39,10 +49,12 @@ Config configPadrao() {
   return c;
 }
 
+// Lê tudo da NVS. Cada get* recebe o padrão, usado quando a chave ainda não existe
+// (placa nova ou recém-gravada com a flash apagada).
 void settings_carregar(Config* c, Calibracao* cal) {
   Preferences p;
   Config d = configPadrao();
-  p.begin(NAMESPACE, true);
+  p.begin(NAMESPACE, true);  // true = só leitura
   c->params.limiteGraus = p.getFloat("limite", d.params.limiteGraus);
   c->params.histerese = p.getFloat("hist", d.params.histerese);
   c->params.tempoMs = p.getUInt("tempo", d.params.tempoMs);
@@ -50,6 +62,8 @@ void settings_carregar(Config* c, Calibracao* cal) {
   c->params.intensidade = p.getUChar("motor", d.params.intensidade);
   c->flexModo = (ModoSensor)p.getUChar("flexmodo", d.flexModo);
   c->flex2Modo = (ModoSensor)p.getUChar("flex2modo", d.flex2Modo);
+  // A flash pode ter qualquer coisa (versão antiga do firmware, gravação interrompida):
+  // tudo passa pelas mesmas faixas seguras da serial/app.
   c->params = validarParams(c->params);
   if (c->flexModo > MODO_OFF) c->flexModo = MODO_AUTO;
   if (c->flex2Modo > MODO_OFF) c->flex2Modo = MODO_AUTO;
@@ -58,13 +72,15 @@ void settings_carregar(Config* c, Calibracao* cal) {
   cal->g0 = v3(p.getFloat("g0x", 0), p.getFloat("g0y", 1), p.getFloat("g0z", 0));
   cal->flex0 = p.getFloat("flex0", 0);
   cal->flex20 = p.getFloat("flex20", 0);
+  // g0 deveria ser unitário: muito curto = dado corrompido, então a calibração não vale.
   if (norm(cal->g0) < 0.5f) cal->valida = false;
   p.end();
 }
 
+// Grava a configuração inteira (todas as chaves, mesmo as que não mudaram: são poucas).
 void settings_salvarConfig(const Config& c) {
   Preferences p;
-  p.begin(NAMESPACE, false);
+  p.begin(NAMESPACE, false);  // false = leitura e escrita
   p.putFloat("limite", c.params.limiteGraus);
   p.putFloat("hist", c.params.histerese);
   p.putUInt("tempo", c.params.tempoMs);
@@ -75,6 +91,7 @@ void settings_salvarConfig(const Config& c) {
   p.end();
 }
 
+// Grava a calibração. A config fica intocada ("reset" de parâmetros mantém a calibração).
 void settings_salvarCalibracao(const Calibracao& cal) {
   Preferences p;
   p.begin(NAMESPACE, false);

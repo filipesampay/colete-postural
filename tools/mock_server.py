@@ -5,7 +5,15 @@
     python3 colete-postural/tools/mock_server.py --flex2 --fsr --falhas
 
 HTTP na 8080 serve colete-postural/src/web/. WebSocket na 8081 fala o mesmo
-protocolo do firmware (WEB_SPEC.md): dados a 10 Hz, config, eventos e comandos.
+protocolo do firmware (topo de src/protocolo.h; Documentação/07-protocolo-e-interfaces.md):
+dados a 10 Hz, config, eventos e comandos.
+
+Diferença para o tools/sim_web.py: aqui a lógica do colete é REESCRITA em Python (classe
+Colete) e o corpo é inventado (respiração, balanço, episódios de "corcunda"). Foi feito junto
+com a página, para desenhá-la sem depender do firmware. Para testar o firmware de verdade com a
+página, use o sim_web.py. Se a lógica do firmware mudar (limites, histerese, calibração,
+campos do JSON), atualize a classe Colete também, senão a página é testada contra um colete
+que não existe mais.
 
 Opções:
   --flex2    simula o 2º sensor flex (GPIO35) ligado (o modo dele começa em "off", ligue nos Ajustes)
@@ -28,22 +36,26 @@ import struct
 import time
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "web")
+# Constante fixa da RFC 6455 (handshake: Sec-WebSocket-Accept = base64(sha1(chave + GUID))).
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
-ADC_MIN, ADC_MAX = 100, 4000
-VERSAO = "1.0.0-mock"
+ADC_MIN, ADC_MAX = 100, 4000  # mesma faixa válida do firmware (ADC_MIN_VALIDO / ADC_MAX_VALIDO)
+VERSAO = "1.0.0-mock"         # aparece no rodapé dos Ajustes: deixa claro que é o mock
 
 
 def padrao():
+    """Configuração padrão, igual a configPadrao() do firmware (flex 2 começa desligado)."""
     return {"limiteGraus": 20.0, "histerese": 3.0, "tempoMs": 3000, "limiteFlex": 15.0,
             "intensidade": 100, "flexModo": "auto", "flex2Modo": "off"}
 
 
 def prender(v, mn, mx):
+    """Prende v em [mn, mx]; NaN (v != v) vira mn. Igual ao prender() de posture.cpp."""
     return mn if v != v else max(mn, min(mx, v))
 
 
 def validar(c):
+    """Mesmas faixas de validarParams() do firmware; modo de sensor inválido vira "auto"."""
     c["limiteGraus"] = prender(float(c["limiteGraus"]), 2.0, 60.0)
     c["limiteFlex"] = prender(float(c["limiteFlex"]), 2.0, 90.0)
     c["histerese"] = prender(float(c["histerese"]), 0.0, min(c["limiteGraus"], c["limiteFlex"]) - 1.0)
@@ -59,6 +71,7 @@ class Colete:
     """Mesma lógica de main.cpp/posture.cpp, com sensores inventados."""
 
     def __init__(self, args):
+        """Estado inicial: sem calibração, parâmetros padrão, sensores conforme as opções."""
         self.args = args
         self.t0 = time.monotonic()
         self.cfg = padrao()
@@ -83,15 +96,22 @@ class Colete:
         self.eventos = []
 
     def agora(self):
+        """Segundos desde que o mock começou (equivale ao millis() / 1000 do firmware)."""
         return time.monotonic() - self.t0
 
     def evt(self, nivel, msg):
+        """Enfileira um aviso {"t":"evt"}; o laço do servidor manda a todos no próximo passo."""
         self.eventos.append({"t": "evt", "nivel": nivel, "msg": msg})
 
     # -------------------------------------------------------------- sensores falsos
 
     def corpo(self, t):
-        """Pitch/roll absolutos do tronco e quanto a coluna dobra (0..1)."""
+        """Pitch/roll absolutos do tronco e quanto a coluna dobra (0..1).
+
+        Postura base com respiração (período de 4 s) e balanço lento. De tempos em tempos começa
+        um "episódio" de corcunda: sobe, fica e desce suavemente (envelope env de 0 a 1), somando
+        "amp" graus para a frente, um pouco de lado e dobrando o flex junto.
+        """
         resp = 1.2 * math.sin(t * 2 * math.pi / 4.0)  # respiração
         balanco = 0.8 * math.sin(t * 0.37) + 0.5 * math.sin(t * 1.3)
         pitch, roll, dobra = 3.0 + resp + balanco, 1.0 + 0.6 * math.sin(t * 0.21), 0.05
@@ -112,6 +132,7 @@ class Colete:
         return pitch, roll, dobra
 
     def atualizar_falhas(self, t):
+        """--falhas: a cada 15–25 s "solta" um sensor por 4–7 s e depois o "reconecta"."""
         if not self.args.falhas:
             return
         if self.falha and t >= self.falha[1]:
@@ -131,6 +152,11 @@ class Colete:
                     self.evt("erro", "MPU-6050 desconectado")
 
     def adc(self, nome, t, dobra):
+        """Leitura falsa (0..4095) do canal analógico "flex", "flex2" ou "fsr".
+
+        Sensor ausente = pino solto (valores baixos e instáveis). Flex: a leitura CAI ao dobrar,
+        como no divisor real (3V3 -> flex -> pino -> 10 kΩ -> GND).
+        """
         if not self.pres[nome]:
             return random.randint(0, 60) if random.random() < 0.5 else random.randint(0, 900)  # pino solto
         if nome == "fsr":
@@ -143,6 +169,12 @@ class Colete:
         return int(prender(base * (1 - dobra * k) + random.gauss(0, 12), 0, 4095))
 
     def detectar(self, nome, valor, t):
+        """Versão simplificada da classe Presenca do firmware.
+
+        Flex: presente depois de 2 s com leitura na faixa válida; sai na hora ao ficar inválido
+        (o firmware espera 1 s e também olha a amplitude da janela). FSR: detectado depois de 2 s
+        de pressão e não sai mais.
+        """
         if nome == "fsr":
             # firmware: pressão estável > 200 por 2 s; fica detectado até reiniciar
             if not self.flex_det["fsr"]:
@@ -165,6 +197,7 @@ class Colete:
 
     @staticmethod
     def ativo(modo, detectado, ref):
+        """Igual a sensorAtivo() de main.cpp: modo × detectado × referência gravada válida."""
         if modo == "off":
             return False
         ref_ok = ADC_MIN <= ref <= ADC_MAX
@@ -172,9 +205,11 @@ class Colete:
 
     @staticmethod
     def pct(leitura, ref):
+        """Igual a flexPct() de posture.cpp: % de queda da leitura em relação à calibração."""
         return 0.0 if ref < 1 else prender((ref - leitura) / ref * 100, 0, 100)
 
     def motor_ligado(self, t):
+        """Motor ligado agora? Teste/confirmação primeiro; em alerta, 300 ms a cada 1 s."""
         if t < self.motor_ate or any(a <= t < b for a, b in self.pulsos):
             return True
         if self.estado == "alerta":
@@ -185,6 +220,8 @@ class Colete:
     # -------------------------------------------------------------- passo de 100 ms
 
     def passo(self):
+        """Um passo de 100 ms: lê os sensores falsos, aplica a lógica do firmware e devolve o
+        {"t":"data"} com os mesmos campos de protocolo_dados() (protocolo.cpp)."""
         t = self.agora()
         self.atualizar_falhas(t)
         pa, ra, dobra = self.corpo(t)
@@ -202,6 +239,7 @@ class Colete:
         if mpu_ok:
             pitch = pa - self.ref[0] + random.gauss(0, 0.15)
             roll = ra - self.ref[1] + random.gauss(0, 0.15)
+            # aproximação: o firmware calcula o ângulo entre vetores gravidade (angleBetweenDeg)
             desvio = math.hypot(pitch, roll)
         else:
             pitch = roll = desvio = 0.0
@@ -227,6 +265,8 @@ class Colete:
         fpct = self.pct(flex, self.flex0) if fat else 0.0
         f2pct = self.pct(flex2, self.flex20) if f2at else 0.0
 
+        # Mesma regra do DetectorPostura (posture.cpp): entra acima do limite, sai abaixo de
+        # limite - histerese, alerta depois de tempoMs; sem calibração nunca fica ruim.
         c = self.cfg
         if calibrando:
             self.estado, tempo_ruim = "ok", 0
@@ -261,6 +301,7 @@ class Colete:
                 "uptime": int(t * 1000)}
 
     def config_msg(self):
+        """Mensagem {"t":"config"} (mesmos campos de protocolo_config())."""
         m = {"t": "config"}
         m.update(self.cfg)
         m["calibrado"] = self.calibrado
@@ -268,6 +309,11 @@ class Colete:
         return m
 
     def comando(self, d):
+        """Executa um comando do app (calib, motor_test, get, set, reset).
+
+        Devolve a lista de respostas só para quem mandou (o "get"); o resto vai por eventos,
+        para todos, como no firmware.
+        """
         cmd = d.get("cmd", "")
         t = self.agora()
         if cmd == "calib":
@@ -289,6 +335,7 @@ class Colete:
             try:
                 validar(self.cfg)
             except (TypeError, ValueError):
+                # valor de tipo errado (ex.: texto num campo numérico): descarta os não numéricos
                 self.cfg = validar(dict(padrao(), **{k: v for k, v in self.cfg.items() if isinstance(v, (int, float))}))
             self.eventos.append(self.config_msg())
             self.evt("ok", "Parâmetros salvos")
@@ -302,9 +349,14 @@ class Colete:
 
 
 # ------------------------------------------------------------------ WebSocket mínimo
+# Só o necessário da RFC 6455 para conversar com o navegador: quadros de texto, close e máscara.
 
 async def ws_ler(reader):
-    """Lê um frame de texto. Volta None ao fechar."""
+    """Lê um frame de texto. Volta None ao fechar.
+
+    Cabeçalho: opcode nos 4 bits baixos do 1º byte; tamanho nos 7 bits do 2º (126/127 = tamanho
+    estendido em 2/8 bytes). Quadros do navegador vêm mascarados (XOR com 4 bytes).
+    """
     while True:
         h = await reader.readexactly(2)
         op, n = h[0] & 0x0F, h[1] & 0x7F
@@ -322,6 +374,7 @@ async def ws_ler(reader):
 
 
 def ws_frame(texto):
+    """Quadro de texto do servidor: 0x81 = FIN + opcode texto, sem máscara."""
     b = texto.encode()
     n = len(b)
     if n < 126:
@@ -334,11 +387,15 @@ def ws_frame(texto):
 
 
 class Servidor:
+    """WebSocket (porta + 1): handshake, envio para todos e o laço de 10 Hz."""
+
     def __init__(self, colete):
+        """colete = o modelo (Colete); clientes = writers dos navegadores conectados."""
         self.colete = colete
         self.clientes = set()
 
     async def enviar(self, w, obj):
+        """Manda um objeto como JSON compacto; cliente que caiu sai da lista."""
         try:
             w.write(ws_frame(json.dumps(obj, ensure_ascii=False, separators=(",", ":"))))
             await w.drain()
@@ -346,10 +403,12 @@ class Servidor:
             self.clientes.discard(w)
 
     async def broadcast(self, obj):
+        """Manda o mesmo objeto a todos os clientes conectados."""
         for w in list(self.clientes):
             await self.enviar(w, obj)
 
     async def ws_cliente(self, reader, writer):
+        """Atende um navegador: handshake, config inicial (igual ao web.cpp) e comandos."""
         try:
             req = await reader.readuntil(b"\r\n\r\n")
         except (asyncio.IncompleteReadError, asyncio.LimitOverrunError):
@@ -391,6 +450,7 @@ class Servidor:
             print("[ws] cliente saiu (%d)" % len(self.clientes))
 
     async def laco(self):
+        """A cada 100 ms: um passo do colete, eventos pendentes e o {"t":"data"} (10 Hz)."""
         while True:
             dados = self.colete.passo()
             eventos, self.colete.eventos = self.colete.eventos, []
@@ -402,6 +462,7 @@ class Servidor:
 
 
 async def http_cliente(reader, writer):
+    """HTTP (porta): serve os 3 arquivos de src/web; outro caminho redireciona para "/"."""
     try:
         req = await reader.readuntil(b"\r\n\r\n")
         caminho = req.split(b" ")[1].decode().split("?")[0]
@@ -426,6 +487,7 @@ async def http_cliente(reader, writer):
 
 
 async def main():
+    """Lê as opções e sobe o HTTP na porta e o WebSocket na porta + 1."""
     ap = argparse.ArgumentParser(description="Simulador do colete (HTTP + WebSocket)")
     ap.add_argument("--port", type=int, default=8080)
     ap.add_argument("--flex2", action="store_true")

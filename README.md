@@ -5,6 +5,12 @@ com app web embarcado (Wi-Fi Access Point + WebSocket). Base: `../GUIA.md`.
 
 O colete **funciona sozinho**: sem celular e sem computador, ele vibra quando a postura sai do limite.
 
+**Documentação completa** (arquitetura, algoritmos, diagramas, referência de cada módulo, decisões de projeto e
+mapa para o texto do TCC): [`Documentação/README.md`](Documentação/README.md). Em PDF, para ler ou imprimir:
+`Documentação/pdf/00-documentacao-completa.pdf` (e um PDF por documento), gerados a partir dos `.md` por
+`python3 Documentação/gerar_pdf.py`. Para manter a documentação junto com o código:
+[`Documentação/MANUTENCAO.md`](Documentação/MANUTENCAO.md).
+
 ## Comandos do dia a dia
 
 ```bash
@@ -125,4 +131,5 @@ src/
 test/            testes da lógica pura (pio test -e native)
 sim/             stubs de Arduino/Wire/Preferences + MPU falso para o simulador
 tools/           sim.sh + roteiros, sim_web.py, gerar_bin.sh, grafico_serial.py, mock_server.py
+Documentação/    documentação: fonte em .md, PDFs gerados em Documentação/pdf/, guia de manutenção
 ```

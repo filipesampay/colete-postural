@@ -1,9 +1,14 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
+<!-- BioSpine: app web do colete postural, num arquivo só (HTML + CSS + JS, sem CDN: na rede do
+     colete o celular não tem internet). Vai embutido na flash e é servido pelo ESP32 (src/web.cpp,
+     HTTP na porta 80); os dados chegam por WebSocket na porta 81. Comentários curtos: tudo aqui
+     ocupa flash e é enviado a cada carga. Documentação: Documentação/08-app-web.md -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#eceef0">
+<!-- "Parecer app" ao abrir pela tela inicial (sem barra do navegador); ver manifest.json -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -13,7 +18,7 @@
 <link rel="apple-touch-icon" href="/icon.svg">
 <title>BioSpine</title>
 <style>
-/* Leituras em display de 7 segmentos, como num instrumento de bancada (DESIGN.md).
+/* Leituras em display de 7 segmentos, como num instrumento de bancada (ver Documentação/08-app-web.md).
    Subconjunto de DSEG7 Classic Bold: Copyright (c) 2017 keshikan, Reserved Font Name "DSEG",
    SIL Open Font License 1.1. Renomeada por ser versão modificada; a vírgula usa o glifo do ponto. */
 @font-face {
@@ -24,8 +29,9 @@
   unicode-range: U+20, U+21, U+2C-2E, U+30-39; /* o ° de 7 segmentos parece glifo faltando: fica na fonte do sistema */
 }
 
-/* Neutro + estado (DESIGN.md): a única cor forte é a do estado da postura.
-   Contraste conferido com o contrast-check do antislop (texto >= 4.5:1, bordas de controle >= 3:1). */
+/* Neutro + estado: a única cor forte é a do estado da postura.
+   Contraste conferido com o contrast-check do antislop (texto >= 4.5:1, bordas de controle >= 3:1).
+   As cores ficam em #rrggbb (6 dígitos): lerCores() no JS lê estes tokens para pintar os canvas. */
 :root {
   color-scheme: light;
   --bg: #eceef0; --panel: #f7f7f5; --panel2: #eef0f1; --ink: #14171a; --muted: #565e68;
@@ -37,6 +43,8 @@
   --body: #c4c9cf; --fabric: #5a626b; --hair: #3d4248;
   --seg: "Colete Segmentos", ui-monospace, monospace;
 }
+/* Tema escuro: segue o sistema, salvo se o usuário escolheu "claro" (data-theme="light").
+   data-theme="dark" força o escuro. Os dois blocos abaixo têm os mesmos valores. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
@@ -54,6 +62,7 @@
   --body: #6c747d; --fabric: #2c3238; --hair: #202428;
 }
 
+/* ---------------------------------------------------------- base */
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -76,6 +85,7 @@ header.top {
 .logo { flex: none; display: block; }
 .marca { font-weight: 750; font-size: 19px; letter-spacing: -.01em; line-height: 1.15; margin-right: auto; }
 .marca small { display: block; font-weight: 500; font-size: 13px; color: var(--muted); letter-spacing: 0; }
+/* indicador de conexão (#conn): data-s = on | off | wait */
 .estado-con {
   display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px;
   border: 1px solid var(--rule); border-radius: 8px; background: var(--panel); font-size: 14px; font-weight: 600; white-space: nowrap;
@@ -85,6 +95,7 @@ header.top {
 .estado-con[data-s="off"] .led { background: var(--bad); }
 .estado-con[data-s="wait"] .led { background: var(--warn); }
 
+/* grade: 1 coluna no celular; de 920px para cima, leitura/gráfico/sensores à esquerda e o 3D à direita */
 main {
   display: grid; gap: 12px; padding: 10px 16px 32px; max-width: 1280px; margin: 0 auto;
   grid-template-columns: minmax(0, 1fr);
@@ -117,13 +128,14 @@ main {
 @keyframes treme { 25% { transform: translateX(-1.5px) rotate(-4deg); } 75% { transform: translateX(1.5px) rotate(4deg); } }
 
 /* ---------------------------------------------------------- leitura principal */
+/* data-e = ok | atencao | alerta | calib | nocal | off; a cor do estado vem de --cor */
 .hero { grid-area: hero; position: relative; overflow: hidden; --cor: var(--edge); padding-top: 22px; }
 /* faixa superior = estado atual (informação, não enfeite) */
 .hero::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 6px; background: var(--cor); transition: background-color .3s; }
 [data-e="ok"] { --cor: var(--ok); }
 [data-e="atencao"] { --cor: var(--warn); }
 .hero[data-e="alerta"] { --cor: var(--bad); border-color: var(--bad); animation: alarme 1s steps(2) infinite; }
-.hero.stale .visor, .hero.stale .metas { opacity: .5; }
+.hero.stale .visor, .hero.stale .metas { opacity: .5; } /* stale: sem dados há mais de 1,5 s */
 @keyframes alarme { 50% { box-shadow: inset 0 0 0 2px var(--bad); } } /* acompanha o alarme físico */
 .topo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .selo {
@@ -139,14 +151,16 @@ main {
 }
 .leitura { position: relative; display: inline-flex; align-items: flex-start; line-height: 1; }
 .digitos { position: relative; font-family: var(--seg); font-weight: 700; font-size: clamp(76px, 22vw, 136px); }
-.digitos i { position: absolute; right: 0; top: 0; font-style: normal; color: var(--ghost); }
+.digitos i { position: absolute; right: 0; top: 0; font-style: normal; color: var(--ghost); } /* segmentos apagados "88,8" atrás dos dígitos */
 .digitos b { position: relative; font-weight: 700; }
 .grau { font-weight: 700; font-size: clamp(34px, 9vw, 58px); color: var(--muted); margin-left: 4px; }
 .visor small { margin-top: 10px; font-size: 14px; color: var(--muted); text-align: center; }
+/* barra de contagem: quanto falta para vibrar (atenção) / há quanto tempo vibra (alerta) */
 .cont { min-height: 40px; margin: 10px 0 2px; display: grid; gap: 6px; }
 .cont-bar { height: 8px; border-radius: 2px; background: var(--rule); overflow: hidden; }
 .cont-bar i { display: block; height: 100%; width: 0; background: var(--cor); transition: width .1s linear; }
 .cont-t { font-size: 15px; font-weight: 650; text-align: center; }
+/* três colunas: frente/trás, lateral e limite */
 .metas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 6px 0 14px; border-top: 1px solid var(--rule); }
 .meta { padding: 10px 8px 0; min-width: 0; }
 .meta + .meta { border-left: 1px solid var(--rule); }
@@ -175,6 +189,7 @@ main {
 .opc { display: flex; flex-wrap: wrap; gap: 0 18px; margin-top: 4px; font-size: 14px; }
 .opc label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; }
 .opc input { width: 18px; height: 18px; accent-color: var(--ink); }
+/* 3D oculto pelo botão "Ocultar 3D" (sobra só o cabeçalho do painel) */
 .viz.fechado .palco, .viz.fechado .legenda, .viz.fechado .opc, .viz.fechado .vistas, .viz.fechado .dica, .viz.fechado #bExpandir { display: none; }
 .viz.fechado .cab { margin: 0; }
 
@@ -187,7 +202,8 @@ main {
 .viz.expandido .dica, .viz.expandido .opc, .viz.expandido #b3d { display: none; }
 .viz.expandido .cab { margin-bottom: 8px; }
 .viz.expandido .legenda { margin-top: 8px; }
-body.travado { overflow: hidden; }
+body.travado { overflow: hidden; } /* expandido: a página de trás não rola */
+/* painel do canto (só no expandido): estado e desvio por cima do manequim */
 .hud {
   display: none; position: absolute; left: 10px; top: 10px; z-index: 1; padding: 10px 12px; border-radius: 6px;
   background: var(--panel); border: 1px solid var(--rule); pointer-events: none; gap: 4px; justify-items: start;
@@ -214,6 +230,7 @@ body.travado { overflow: hidden; }
 
 /* ---------------------------------------------------------- sensores */
 .sens { grid-area: sens; }
+/* uma linha por sensor: led, nome, texto de estado e valor. data-s = on | idle | off | vib */
 .lin { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; padding: 11px 0; border-top: 1px solid var(--rule); }
 .lin:first-of-type { border-top: 0; padding-top: 0; }
 .lin .led { width: 12px; height: 12px; grid-row: 1 / span 2; }
@@ -228,7 +245,7 @@ body.travado { overflow: hidden; }
 .lin .val.txt { font-family: inherit; font-size: 16px; font-weight: 650; }
 .barra { grid-column: 2 / span 2; height: 6px; border-radius: 2px; background: var(--rule); position: relative; margin-top: 6px; }
 .barra i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: var(--ink); width: 0; transition: width .15s; }
-.barra u { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--bad); }
+.barra u { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--bad); } /* marca do limite do flex */
 .extras { font-size: 14px; color: var(--muted); margin-top: 8px; border-top: 1px solid var(--rule); padding-top: 10px; }
 
 /* ---------------------------------------------------------- ajustes */
@@ -257,10 +274,12 @@ select { min-height: 44px; padding: 0 10px; border-radius: 8px; border: 1px soli
 .toast.erro::before { background: var(--bad); }
 .toast.sai { opacity: 0; transition: opacity .3s; }
 @keyframes entra { from { opacity: 0; transform: translateY(8px); } }
+/* acessibilidade: sem animações quando o sistema pede movimento reduzido */
 @media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
+<!-- Cabeçalho: marca, botão de tema e indicador de conexão (#conn, atualizado por conexao()) -->
 <header class="top">
   <img class="logo" src="/icon.svg" width="40" height="40" alt="">
   <div class="marca">BioSpine<small>Colete de monitoramento postural</small></div>
@@ -269,6 +288,8 @@ select { min-height: 44px; padding: 0 10px; border-radius: 8px; border: 1px soli
 </header>
 
 <main>
+  <!-- Leitura principal (hero): selo do estado, desvio em 7 segmentos, contagem até vibrar,
+       frente/trás, lateral, limite, aviso e os botões Calibrar e Testar motor -->
   <section class="painel hero" id="hero" data-e="off" aria-label="Leitura da postura">
     <div class="topo">
       <span class="selo" id="selo" aria-live="polite">CONECTANDO</span>
@@ -296,6 +317,8 @@ select { min-height: 44px; padding: 0 10px; border-radius: 8px; border: 1px soli
     </div>
   </section>
 
+  <!-- Vista 3D (render): manequim em canvas 2D com o colete e os sensores. Vistas de câmera,
+       expandir, ocultar e as caixas de inverter frente/trás e lado -->
   <section class="painel viz" id="viz" aria-label="Vista do colete">
     <div class="cab">
       <h2>Vista do colete</h2>
@@ -326,6 +349,7 @@ select { min-height: 44px; padding: 0 10px; border-radius: 8px; border: 1px soli
     </div>
   </section>
 
+  <!-- Gráfico dos últimos 30 s (desenharGrafico) e gravação em CSV (gravar, bCsv) -->
   <section class="painel graf" aria-label="Gráfico">
     <div class="cab">
       <h2>Desvio nos últimos 30 s</h2><span class="sp"></span>
@@ -339,6 +363,7 @@ select { min-height: 44px; padding: 0 10px; border-radius: 8px; border: 1px soli
     </div>
   </section>
 
+  <!-- Sensores (sensores): ids no padrão sX = linha, vX = valor, tX = texto, usados por linha() -->
   <section class="painel sens" aria-label="Sensores">
     <div class="cab"><h2>Sensores</h2></div>
     <div class="lin" id="sMpu" data-s="idle"><i class="led"></i><b>MPU-6050 (inclinação)</b><span class="val seg" id="vMpu">--</span><span class="st" id="tMpu">aguardando</span></div>
@@ -348,6 +373,8 @@ select { min-height: 44px; padding: 0 10px; border-radius: 8px; border: 1px soli
     <div class="extras oculto" id="extras"></div>
   </section>
 
+  <!-- Ajustes: o id de cada campo é o nome do campo no JSON de config (limiteGraus, tempoMs...).
+       Faixas iguais às de validarParams no firmware (src/posture.cpp), que valida de novo -->
   <section class="painel cfg" aria-label="Ajustes">
     <div class="cab"><h2>Ajustes do colete</h2><span class="nota">Ficam salvos no colete, mesmo sem o celular.</span><span class="sp"></span><small class="muted" id="cfgSt"></small></div>
     <form id="form" onsubmit="return false">
@@ -369,10 +396,25 @@ select { min-height: 44px; padding: 0 10px; border-radius: 8px; border: 1px soli
     </form>
   </section>
 </main>
+<!-- Avisos temporários (toast): eventos "evt" do firmware e erros da própria página -->
 <div id="toasts" aria-live="polite"></div>
 
 <script>
 'use strict';
+
+// ==================================================================================================
+// App do colete: um script só, sem bibliotecas. Documentação: Documentação/08-app-web.md
+//
+// conectar() abre ws://<host>:81/ e ws.onmessage despacha pelo campo "t" (protocolo: src/protocolo.h):
+//   "data"   (10 Hz) -> aoDados: gravar (CSV + histórico) -> hero (leitura) -> sensores -> desenharGrafico.
+//                       O 3D (render) roda no próprio laço e lê a última leitura em S.d.
+//   "config"         -> aoConfig: guarda em S.cfg e preenche os ajustes.
+//   "evt"            -> toast (aviso temporário).
+// Comandos: enviar({cmd: 'calib' | 'motor_test' | 'get' | 'set' | 'reset'}).
+// Caiu: conexao(false) limpa a tela e agendar() tenta de novo a cada 2 s.
+// A página não decide nada sobre a postura: estado, limites e calibração vêm prontos do firmware.
+// Preferências no navegador (localStorage, chaves "colete.*"): tema, invP, invR, 3d.
+// ==================================================================================================
 
 // Posição de cada sensor no colete (metros). x+ = lado direito da pessoa, y = altura a partir do quadril
 // (cintura ≈ 0,20, ombros ≈ 0,58, nuca ≈ 0,70). Todos ficam nas costas.
@@ -386,16 +428,22 @@ const POS = {
 };
 
 const $ = id => document.getElementById(id);
+// número com n casas e vírgula decimal; "--" para nulo/NaN
 const fmt = (v, n = 1) => (v == null || isNaN(v)) ? '--' : Number(v).toFixed(n).replace('.', ',');
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+// localStorage com try: modo privado ou armazenamento bloqueado não pode quebrar a página
 const guardar = (k, v) => { try { localStorage.setItem('colete.' + k, v); } catch (e) {} };
 const ler = k => { try { return localStorage.getItem('colete.' + k); } catch (e) { return null; } };
 
+// Estado global. on = WebSocket aberto; d = última mensagem "data"; cfg = último "config";
+// ultimo = performance.now() da última mensagem; invP/invR = inverter frente/trás e lado (só exibição).
 const S = { on: false, d: null, cfg: null, ultimo: 0, invP: ler('invP') === '1', invR: ler('invR') === '1' };
 
 // ================================================================== WebSocket
 
 let ws = null, wsTimer = 0;
+// Abre o WebSocket. Na placa a página vem da porta 80 (location.port vazio) e o WS fica na 81;
+// no simulador/mock (página na 8080) o WS fica na porta seguinte (8081).
 function conectar() {
   clearTimeout(wsTimer);
   const p = location.port ? Number(location.port) + 1 : 81;
@@ -404,7 +452,7 @@ function conectar() {
   } catch (e) { agendar(); return; }
   ws.onopen = () => { S.ultimo = performance.now(); conexao(true); enviar({ cmd: 'get' }); };
   ws.onclose = () => { conexao(false); agendar(); };
-  ws.onerror = () => { try { ws.close(); } catch (e) {} };
+  ws.onerror = () => { try { ws.close(); } catch (e) {} }; // erro vira close: um caminho só de reconexão
   ws.onmessage = ev => {
     let m;
     try { m = JSON.parse(ev.data); } catch (e) { return; }
@@ -414,12 +462,15 @@ function conectar() {
     else if (m.t === 'evt') toast(m.msg, m.nivel);
   };
 }
+// nova tentativa de conexão em 2 s (cancela uma pendente)
 function agendar() { clearTimeout(wsTimer); wsTimer = setTimeout(conectar, 2000); }
+// Manda um comando JSON ao colete. Sem conexão: avisa e retorna false (quem chama não marca como enviado).
 function enviar(o) {
   if (ws && ws.readyState === 1) { ws.send(JSON.stringify(o)); return true; }
   toast('Sem conexão com o colete. Confira o Wi-Fi BioSpine.', 'erro');
   return false;
 }
+// Indicador de conexão. Ao desconectar esquece a última leitura e mostra a tela "sem conexão".
 function conexao(on) {
   S.on = on;
   $('conn').dataset.s = on ? 'on' : 'off';
@@ -427,6 +478,7 @@ function conexao(on) {
   if (!on) { S.d = null; heroOff(); desenharGrafico(); }
 }
 // Celular que volta do bloqueio pode ficar com o socket "zumbi": sem dados por 4 s, reconecta.
+// Antes disso, com 1,5 s sem dados, a leitura fica opaca (classe "stale").
 setInterval(() => {
   const dt = performance.now() - S.ultimo;
   $('hero').classList.toggle('stale', S.on && dt > 1500);
@@ -435,6 +487,7 @@ setInterval(() => {
 
 // ================================================================== dados
 
+// Mensagem "data" (10 Hz): guarda, grava e redesenha leitura, sensores e gráfico.
 function aoDados(m) {
   S.d = m;
   gravar(m);
@@ -443,17 +496,20 @@ function aoDados(m) {
   desenharGrafico();
 }
 
+// [selo, frase] de cada estado que o firmware manda (campo "estado", de estadoNome em src/posture.cpp)
 const EST = {
   ok: ['OK', 'Postura dentro do limite'],
   atencao: ['ATENÇÃO', 'Fora do limite, contando o tempo'],
   alerta: ['ALERTA', 'Motor vibrando: corrija a postura'],
 };
 
+// Número grande do desvio, com os segmentos apagados ("fantasma") atrás.
 function mostrarDesvio(txt) {
   $('desvio').textContent = txt;
   $('fantasma').textContent = txt.replace(/[\d-]/g, '8'); // segmentos apagados do display
 }
 
+// Leitura principal e painel do modo expandido no estado "sem conexão".
 function heroOff() {
   $('hero').dataset.e = 'off';
   $('selo').textContent = 'DESCONECTADO';
@@ -471,14 +527,18 @@ function heroOff() {
   $('hPR').textContent = 'Conecte no Wi-Fi BioSpine';
 }
 
+// Faixa de aviso dentro da leitura principal. txt vazio esconde; erro = borda vermelha.
 function aviso(txt, erro) {
   const a = $('aviso');
   a.textContent = txt;
   a.className = 'aviso' + (txt ? ' on' : '') + (erro ? ' erro' : '');
 }
 
+// Texto da direção de um ângulo em graus (menos de 0,5° = "alinhado").
 function direcao(v, pos, neg) { return Math.abs(v) < 0.5 ? 'alinhado' : (v > 0 ? pos : neg); }
 
+// Leitura principal a partir de uma mensagem "data". Prioridade do selo:
+// calibrando > sem calibração > estado do firmware (ok / atencao / alerta).
 function hero(m) {
   const c = S.cfg || {};
   let e = m.estado, selo, sub;
@@ -490,6 +550,7 @@ function hero(m) {
   $('sub').textContent = sub;
   mostrarDesvio(m.mpuOk ? fmt(m.desvio) : '--');
 
+  // inverter só troca o rótulo da direção (sensor preso virado); o desvio não tem sinal
   const p = m.pitch * (S.invP ? -1 : 1), r = m.roll * (S.invR ? -1 : 1);
   $('mPitch').textContent = fmt(Math.abs(p)) + '°';
   $('mPitchD').textContent = direcao(p, 'à frente', 'para trás');
@@ -503,6 +564,7 @@ function hero(m) {
   $('hPR').textContent = m.mpuOk ? 'Frente/trás ' + fmt(Math.abs(p)) + '° ' + direcao(p, 'à frente', 'para trás') +
     ', lateral ' + fmt(Math.abs(r)) + '° ' + direcao(r, 'à direita', 'à esquerda') : 'MPU-6050 sem resposta';
 
+  // contagem: atenção = fração tempoRuimMs / tempoMs até vibrar; alerta = barra cheia e há quanto tempo vibra
   const tempo = c.tempoMs != null ? c.tempoMs : 3000;
   let frac = 0, txt = '';
   if (m.estado === 'atencao' && !m.calibrando) {
@@ -515,6 +577,7 @@ function hero(m) {
   $('contBar').style.width = (frac * 100) + '%';
   $('contT').textContent = txt;
 
+  // aviso mais grave primeiro: sensor principal fora, depois falta de calibração
   if (!m.mpuOk) aviso('MPU-6050 desconectado. Confira os fios SDA (D21) e SCL (D22).', true);
   else if (!m.calibrado && !m.calibrando) aviso('Vista o colete, fique na postura correta e toque em Calibrar postura (ou aperte o botão do colete).');
   else aviso('');
@@ -523,12 +586,15 @@ function hero(m) {
   $('bMotor').classList.toggle('on', !!m.motor);
 }
 
+// Uma linha da lista de sensores: id "sX" recebe data-s (cor do led), "vX" o valor (HTML) e "tX" o texto.
+// val/st null = não mexe.
 function linha(id, s, val, st) {
   $(id).dataset.s = s;
   if (val != null) $('v' + id.slice(1)).innerHTML = val;
   if (st != null) $('t' + id.slice(1)).textContent = st;
 }
 
+// [data-s, texto] de um flex. Só descreve o que o firmware decidiu: "ativo" vem pronto (sensorAtivo em main.cpp).
 function estadoFlex(det, ativo, modo, calibrado) {
   if (ativo) return ['on', modo === 'on' ? 'ativo, forçado ligado' : 'ativo na detecção'];
   if (modo === 'off') return ['idle', 'desligado nos ajustes'];
@@ -536,6 +602,7 @@ function estadoFlex(det, ativo, modo, calibrado) {
   return ['off', 'não detectado'];
 }
 
+// Lista de sensores: MPU, flex 1, flex 2 (se o modo permitir), motor e FSR (só se detectado).
 function sensores(m) {
   const c = S.cfg || {};
   linha('sMpu', m.mpuOk ? 'on' : 'off', m.mpuOk ? fmt(m.desvio) + '°' : '--', m.mpuOk ? 'conectado' : 'desconectado');
@@ -543,7 +610,7 @@ function sensores(m) {
   let [s, t] = estadoFlex(m.flexDetectado, m.flexAtivo, c.flexModo, m.calibrado);
   linha('sFlex', s, (m.flexAtivo ? fmt(m.flexPct, 0) + '%' : '') + '<small>leitura ' + m.flex + '</small>', t);
   $('bFlex').style.width = (m.flexAtivo ? clamp(m.flexPct, 0, 100) : 0) + '%';
-  $('lFlex').style.left = clamp(c.limiteFlex || 15, 0, 100) + '%';
+  $('lFlex').style.left = clamp(c.limiteFlex || 15, 0, 100) + '%'; // marca do limite na barra
 
   // flex 2 vem desligado por padrão (o GPIO35 solto "copia" o 34): só mostra se o modo permitir
   const temF2 = m.flex2Ativo || (c.flex2Modo !== 'off' && (m.flex2Detectado || c.flex2Modo === 'on'));
@@ -559,6 +626,7 @@ function sensores(m) {
   linha('sMotor', m.motor ? 'vib' : 'idle', m.motor ? 'vibrando' : 'parado',
         'intensidade ' + (c.intensidade != null ? c.intensidade + '%' : '--'));
 
+  // FSR (montagem BioSpine): só telemetria, aparece depois de detectado
   const ex = $('extras');
   ex.classList.toggle('oculto', !m.fsrDetectado);
   if (m.fsrDetectado) ex.textContent = 'Sensor extra: pressão (FSR) ' + m.fsr + ' de 4095';
@@ -566,6 +634,7 @@ function sensores(m) {
 
 // ================================================================== ajustes
 
+// Campos numéricos: chave = id do slider = nome no JSON de config; valor = formato do <output> ao lado.
 const CAMPOS = {
   limiteGraus: v => fmt(v, 0) + '°',
   histerese: v => fmt(v) + '°',
@@ -573,8 +642,9 @@ const CAMPOS = {
   limiteFlex: v => fmt(v, 0) + '%',
   intensidade: v => fmt(v, 0) + '%',
 };
-let sujo = false;
+let sujo = false; // há alteração não salva: um "config" que chegar não sobrescreve o formulário
 
+// Mensagem "config": chega ao conectar e depois de qualquer mudança (deste app, de outro celular ou da serial).
 function aoConfig(m) {
   S.cfg = m;
   if (!sujo) preencher(m);
@@ -584,6 +654,7 @@ function aoConfig(m) {
   if (S.d) { hero(S.d); sensores(S.d); }
 }
 
+// Copia um config para o formulário e marca como salvo.
 function preencher(c) {
   for (const k in CAMPOS) if (c[k] != null) $(k).value = c[k];
   $('flexModo').value = c.flexModo || 'auto';
@@ -593,22 +664,27 @@ function preencher(c) {
   marcar(false);
 }
 
+// Mesma regra de validarParams (src/posture.cpp): histerese no máximo (menor limite - 1),
+// senão a postura nunca voltaria abaixo de (limite - histerese) e o alerta não sairia.
 function ajustarHisterese() {
   const mx = Math.min(+$('limiteGraus').value, +$('limiteFlex').value) - 1;
   $('histerese').max = mx;
   if (+$('histerese').value > mx) $('histerese').value = mx;
 }
 
+// Texto dos <output> de cada slider (ids "oLimiteGraus", "oTempoMs"...).
 function saidas() {
   for (const k in CAMPOS) $('o' + k[0].toUpperCase() + k.slice(1)).textContent = CAMPOS[k](+$(k).value);
 }
 
+// Marca o formulário como alterado (v = true) ou salvo: liga/desliga Salvar e Descartar.
 function marcar(v) {
   sujo = v;
   $('bSalvar').disabled = $('bDescartar').disabled = !v;
   $('cfgSt').textContent = v ? 'Alterações ainda não salvas' : '';
 }
 
+// "input" dispara enquanto arrasta o slider; "change" cobre os selects
 $('form').addEventListener('input', e => {
   if (e.target.id === 'limiteGraus' || e.target.id === 'limiteFlex') ajustarHisterese();
   saidas();
@@ -624,14 +700,17 @@ $('bSalvar').onclick = () => {
   if (enviar(o)) marcar(false);
 };
 $('bDescartar').onclick = () => { marcar(false); if (S.cfg) preencher(S.cfg); };
+// reset no firmware = configPadrao(); a calibração fica. A resposta é um "config" novo.
 $('bReset').onclick = () => {
   if (confirm('Voltar os ajustes ao padrão? A calibração é mantida.')) { marcar(false); enviar({ cmd: 'reset' }); }
 };
+// Ações imediatas: o firmware responde com eventos (toast) e o andamento aparece nas mensagens "data".
 $('bCalib').onclick = () => enviar({ cmd: 'calib' });
 $('bMotor').onclick = () => enviar({ cmd: 'motor_test' });
 
 // ================================================================== avisos
 
+// Aviso temporário (3,5 s), no máximo 3 na tela. nivel = info | ok | erro (vira classe CSS).
 function toast(msg, nivel) {
   const box = $('toasts');
   const t = document.createElement('div');
@@ -644,25 +723,31 @@ function toast(msg, nivel) {
 
 // ================================================================== gravação / CSV
 // Formato lido por tools/grafico_serial.py (figura do TCC).
+// REG = linhas do CSV (texto), desde que a página conectou ou desde o último "Zerar gravação".
+// Fica só na memória da aba: recarregar a página perde a gravação.
 
 const REG = [];
-let t0Reg = null;
+let t0Reg = null; // uptime (ms) da 1ª amostra: a coluna t é contada a partir dele
 const MAX_REG = 200000; // ~5,5 h a 10 Hz
 
+// Para cada "data": uma linha no CSV (REG) e um ponto no histórico do gráfico (HIST).
+// Colunas: t (s), desvio, limite, pitch, roll, flex (ADC), flexPct, limiteFlex, estado, alerta (0/1).
 function gravar(m) {
   const c = S.cfg || {};
   if (t0Reg === null) t0Reg = m.uptime;
   if (REG.length >= MAX_REG) REG.shift();
   REG.push([((m.uptime - t0Reg) / 1000).toFixed(2), m.desvio, c.limiteGraus, m.pitch, m.roll, m.flex,
             m.flexPct, c.limiteFlex, m.estado, m.estado === 'alerta' ? 1 : 0].join(','));
+  // ponto do gráfico: d = desvio (null sem MPU), f = % do flex ativo (1, senão 2), e = estado
   HIST.push({ t: performance.now(), d: m.mpuOk ? m.desvio : null, f: m.flexAtivo ? m.flexPct : (m.flex2Ativo ? m.flex2Pct : null), e: m.estado });
-  if (REG.length % 10 === 1) {
+  if (REG.length % 10 === 1) { // contador atualizado ~1 vez por segundo (10 amostras = 1 s)
     const s = REG.length / 10;
     $('csvInfo').textContent = REG.length.toLocaleString('pt-BR') + ' amostras, ' +
       (s < 60 ? fmt(s, 0) + ' s' : Math.floor(s / 60) + ' min ' + Math.floor(s % 60) + ' s') + ' gravados';
   }
 }
 
+// Baixa o CSV como postura_AAAAMMDD_HHMMSS.csv, gerado no próprio celular (Blob + link temporário).
 $('bCsv').onclick = () => {
   if (!REG.length) { toast('Nada gravado ainda: a gravação começa quando o colete conecta.', 'erro'); return; }
   const txt = 't,desvio,limite,pitch,roll,flex,flexPct,limiteFlex,estado,alerta\n' + REG.join('\n') + '\n';
@@ -683,6 +768,8 @@ $('bLimpar').onclick = () => {
 
 // ================================================================== tema e cores
 
+// Tema: auto (segue o sistema) -> claro -> escuro, salvo em colete.tema. Os canvas não leem CSS:
+// a cada troca, lerCores() copia os tokens de cor para C e os gráficos são redesenhados.
 const TEMAS = ['auto', 'light', 'dark'], NOME_TEMA = { auto: 'automático', light: 'claro', dark: 'escuro' };
 let tema = TEMAS.includes(ler('tema')) ? ler('tema') : 'auto';
 function aplicarTema() {
@@ -695,7 +782,8 @@ function aplicarTema() {
 }
 $('bTema').onclick = () => { tema = TEMAS[(TEMAS.indexOf(tema) + 1) % 3]; guardar('tema', tema); aplicarTema(); };
 
-let C = {};
+let C = {}; // cores atuais em [r, g, b], por nome do token CSS (C.ink, C.bad...); C.escuro = tema escuro
+// Lê as variáveis CSS (--bg, --ink...). Espera #rrggbb de 6 dígitos.
 function lerCores() {
   const cs = getComputedStyle(document.documentElement);
   const rgb = n => {
@@ -705,11 +793,14 @@ function lerCores() {
   ['bg', 'panel', 'panel2', 'ink', 'muted', 'rule', 'edge', 'trace2', 'ok', 'warn', 'bad', 'body', 'fabric', 'hair'].forEach(n => C[n] = rgb(n));
   C.escuro = C.panel[0] < 128;
 }
+// [r,g,b] (+ alfa opcional) -> texto de cor para o canvas; mix = interpolação entre duas cores (t = 0..1)
 const css = (c, a) => a == null ? 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')' : 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')';
 const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 
 // ================================================================== canvas com DPR
 
+// Resolução do canvas = tamanho na tela × densidade de pixels (no máximo 2×, para poupar o celular).
+// Retorna o fator (dpr), usado para escalar fontes e linhas.
 function ajustarCanvas(cv) {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
@@ -719,10 +810,12 @@ function ajustarCanvas(cv) {
 
 // ================================================================== gráfico (30 s)
 
-const HIST = [];
-const JANELA = 30000;
+const HIST = [];       // pontos {t, d, f, e} (t = performance.now() do celular), só os últimos ~30 s
+const JANELA = 30000; // ms mostrados no gráfico
 const cg = $('cg');
 
+// Desenha o gráfico: faixas de atenção/alerta, grade, limites tracejados, curva do flex (%) e do desvio (°).
+// Chamado a cada "data" e no resize. Escala vertical: no mínimo 30 e 1,4× o limite, arredondada à dezena.
 function desenharGrafico() {
   const dpr = ajustarCanvas(cg);
   const W = cg.width, H = cg.height;
@@ -746,6 +839,7 @@ function desenharGrafico() {
   if (temFlex) mx = Math.max(mx, c.limiteFlex * 1.4);
   mx = Math.ceil(mx / 10) * 10;
 
+  // margens (esquerda guarda os números do eixo); X: tempo -> px ("agora" à direita); Y: valor -> px
   const pl = 34 * dpr, pr = 8 * dpr, pt = 8 * dpr, pb = 22 * dpr;
   const X = t => pl + (W - pl - pr) * (1 - (agora - t) / JANELA);
   const Y = v => pt + (H - pt - pb) * (1 - v / mx);
@@ -760,6 +854,7 @@ function desenharGrafico() {
     g.fillRect(X(HIST[i].t), pt, X(HIST[i + 1].t) - X(HIST[i].t) + 1, H - pt - pb);
   }
 
+  // grade com 5 linhas e rótulos de tempo embaixo
   g.strokeStyle = css(C.rule); g.lineWidth = dpr; g.fillStyle = css(C.muted);
   g.textAlign = 'right';
   for (let i = 0; i <= 4; i++) {
@@ -770,6 +865,7 @@ function desenharGrafico() {
   g.textAlign = 'center'; g.textBaseline = 'alphabetic';
   [30, 20, 10, 0].forEach(s => g.fillText(s ? '−' + s + ' s' : 'agora', clamp(X(agora - s * 1000), pl + 14 * dpr, W - pr - 16 * dpr), H - 5 * dpr));
 
+  // limites tracejados: vermelho = limite em graus, cinza = limite do flex (%)
   g.setLineDash([6 * dpr, 5 * dpr]); g.lineWidth = 1.6 * dpr;
   g.strokeStyle = css(C.bad);
   g.beginPath(); g.moveTo(pl, Y(c.limiteGraus)); g.lineTo(W - pr, Y(c.limiteGraus)); g.stroke();
@@ -779,6 +875,7 @@ function desenharGrafico() {
   }
   g.setLineDash([]);
 
+  // uma curva do campo k de HIST; null interrompe a linha (sensor ausente); area = preenche até o zero
   const serie = (k, cor, larg, area) => {
     g.beginPath();
     let ini = false, x0 = 0, xl = 0;
@@ -802,17 +899,22 @@ function desenharGrafico() {
 // ================================================================== vista 3D (canvas 2D, projeção própria)
 // Manequim low-poly com o colete. pitch/roll inclinam o tronco a partir do quadril; o flex curva a
 // parte de cima da coluna (ilustrativo: o flex é um número só, em % da calibração).
+// Sem WebGL: os vértices são transformados em JS e as faces pintadas da mais distante para a mais
+// próxima (algoritmo do pintor), com luz difusa por face. Coordenadas do corpo (m): x = direita da
+// pessoa, y = altura a partir do quadril, z = frente. Ordem da pose em xf(): curvatura do flex,
+// lateral (roll), frente/trás (pitch); depois a câmera (cam) gira em volta de ALVO_Y e projeta.
 
-const YB = 0.16, YT = 0.60;          // a curvatura do flex vai de YB (lombar) até YT (ombros)
+const YB = 0.16, YT = 0.60;         // a curvatura do flex vai de YB (lombar) até YT (ombros)
 const ALVO_Y = 0.30, DIST = 2.7;     // centro da câmera e distância
 const SE = 0.8;                      // expoente da superelipse (seção mais "quadrada" que elipse)
-const SEC = [ // y, meia-largura, meia-profundidade (m)
+const SEC = [ // seções do tronco, do quadril ao pescoço: y, meia-largura, meia-profundidade (m)
   [0.00, .160, .105], [0.08, .158, .102], [0.18, .140, .092], [0.28, .144, .098], [0.38, .156, .108],
   [0.47, .166, .114], [0.54, .178, .106], [0.585, .172, .092], [0.625, .125, .072], [0.655, .068, .058],
   [0.70, .052, .052], [0.77, .048, .048]];
-const VEST_Y0 = 0.04, VEST_Y1 = 0.60;
+const VEST_Y0 = 0.04, VEST_Y1 = 0.60; // faixa de altura coberta pelo colete (faces 'vest')
 const HC = [0, 0.865, 0.012], HR = [0.078, 0.102, 0.092]; // cabeça: centro e raios (+z = frente)
 
+// Seção do tronco na altura y (interpolação linear entre as linhas de SEC).
 function secAt(y) {
   if (y <= SEC[0][0]) return SEC[0];
   for (let i = 0; i < SEC.length - 1; i++) {
@@ -821,11 +923,16 @@ function secAt(y) {
   }
   return SEC[SEC.length - 1];
 }
+// superelipse: sinal(v)·|v|^SE aplicado a seno/cosseno deixa a seção entre elipse e retângulo
 const fe = v => Math.sign(v) * Math.pow(Math.abs(v), SE);
+// peso da curvatura do flex na altura y: 0 abaixo de YB, 1 acima de YT, transição suave (smoothstep 3t² - 2t³)
 const peso = y => { const t = clamp((y - YB) / (YT - YB), 0, 1); return t * t * (3 - 2 * t); };
-function sub(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
+function sub(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; } // a - b
+// produto vetorial a × b
 function crs(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
 
+// Malha montada uma vez. P = vértices (x, y, z); W = peso da curvatura do flex por vértice;
+// F = faces {v: índices dos vértices, k: material 'body' | 'vest' | 'hair'}.
 const MESH = (() => {
   const P = [], W = [], F = [];
   const add = (x, y, z, w) => { P.push(x, y, z); W.push(w); return W.length - 1; };
@@ -836,6 +943,8 @@ const MESH = (() => {
     else { const n = v.length, q0 = p(v[0]), q1 = p(v[Math.floor(n / 3)]), q2 = p(v[Math.floor(2 * n / 3)]); a = sub(q1, q0); b = sub(q2, q0); }
     return crs(a, b);
   };
+  // registra uma face com os vértices em ordem "para fora": se a normal aponta para ref (um ponto
+  // dentro do corpo), inverte. O render usa essa orientação para descartar faces de costas.
   const face = (v, k, ref) => {
     let cx = 0, cy = 0, cz = 0;
     for (const i of v) { cx += P[3 * i]; cy += P[3 * i + 1]; cz += P[3 * i + 2]; }
@@ -845,7 +954,8 @@ const MESH = (() => {
     F.push({ v, k });
   };
 
-  // tronco + pescoço
+  // tronco + pescoço: um anel de NS vértices em cada seção e no meio entre seções; as costas (cos < 0)
+  // ficam 8% mais rasas. Faces entre VEST_Y0 e VEST_Y1 são o colete.
   const NS = 20, lv = [];
   for (let i = 0; i < SEC.length - 1; i++) {
     lv.push(SEC[i]);
@@ -863,11 +973,11 @@ const MESH = (() => {
     face([base0 + i * NS + j, base0 + i * NS + j2, base0 + (i + 1) * NS + j2, base0 + (i + 1) * NS + j],
          ym > VEST_Y0 && ym < VEST_Y1 ? 'vest' : 'body', [0, ym, 0]);
   }
-  const fundo = [];
+  const fundo = []; // tampa de baixo do tronco
   for (let j = 0; j < NS; j++) fundo.push(base0 + j);
   face(fundo, 'body', [0, 0.5, 0]);
 
-  // cabeça (elipsoide)
+  // cabeça (elipsoide em latitude/longitude); peso 1: acompanha toda a curvatura do flex
   const NL = 14, NH = 24, h0 = W.length;
   for (let i = 0; i <= NL; i++) {
     const la = -Math.PI / 2 + Math.PI * i / NL;
@@ -886,7 +996,7 @@ const MESH = (() => {
     face(q, dy > -0.1 + 0.65 * dz ? 'hair' : 'body', HC); // frente: testa (0,55); lados: orelha; costas: nuca (-0,75)
   }
 
-  // braços (tubos)
+  // braços (tubos que afinam do ombro A à mão B), peso 1 como a cabeça; s = -1 esquerdo, 1 direito
   for (const s of [-1, 1]) {
     const A = [s * 0.198, 0.565, -0.004], B = [s * 0.236, 0.11, 0.03], NA = 10, NLv = 7, a0 = W.length;
     for (let i = 0; i <= NLv; i++) {
@@ -905,10 +1015,14 @@ const MESH = (() => {
   return { P: new Float32Array(P), W: new Float32Array(W), F, n: W.length };
 })();
 
-// estado animado (interpolado entre as mensagens de 10 Hz)
+// estado animado (interpolado entre as mensagens de 10 Hz): p, r = pitch/roll (rad), b = curvatura do
+// flex (rad); yaw/el = câmera atual (rad); yawA/elA = câmera alvo
 const V = { p: 0, r: 0, b: 0, yaw: -0.5, el: 0.2, yawA: -0.5, elA: 0.2 };
+// [yaw, elevação] (rad) de cada botão de vista
 const VISTAS = { costas: [-0.5, 0.2], lado: [-Math.PI / 2, 0.12], frente: [Math.PI - 0.4, 0.12] };
 
+// Constantes do quadro: senos/cossenos da pose (p, r, b em rad) e da câmera, F = distância focal (px)
+// e centro da tela (cx, cyS). W, H = tamanho do canvas em px.
 function prepararK(p, r, b, W, H) {
   const sp = Math.sin(p), cp = Math.cos(p), sr = Math.sin(r), cr = Math.cos(r);
   const sy = Math.sin(V.yaw), cy = Math.cos(V.yaw), se = Math.sin(V.el), ce = Math.cos(V.el);
@@ -917,6 +1031,7 @@ function prepararK(p, r, b, W, H) {
   return { sp, cp, sr, cr, sy, cy, se, ce, b, F, cx: W / 2, cyS: H * (EXP && H > W ? 0.57 : 0.5) };
 }
 // corpo -> mundo -> câmera. out = [cx, cy, cz, sx, sy]
+// w = peso da curvatura do flex no vértice. Lateral e frente giram em torno do quadril (y = 0).
 function xf(x, y, z, w, out, k) {
   if (k.b && w > 0) { // curvatura do flex: gira em torno do pivô (0, YB, 0), proporcional ao peso
     const a = k.b * w, ca = Math.cos(a), sa = Math.sin(a), yy = y - YB;
@@ -926,6 +1041,8 @@ function xf(x, y, z, w, out, k) {
   const y2 = y1 * k.cp - z * k.sp, z1 = y1 * k.sp + z * k.cp;        // frente (topo -> +z)
   return cam(x1, y2, z1, out, k);
 }
+// Câmera: gira o mundo em yaw (eixo y) e elevação (eixo x) em volta de (0, ALVO_Y, 0), afasta DIST e
+// projeta em perspectiva (tela = centro + x·F/z). Escreve em out = [cx, cy, cz, sx, sy].
 function cam(x, y, z, out, k) {
   const ty = y - ALVO_Y;
   const x1 = x * k.cy - z * k.sy, z1 = x * k.sy + z * k.cy;
@@ -935,12 +1052,16 @@ function cam(x, y, z, out, k) {
   return out;
 }
 
+// buffers reaproveitados a cada quadro (nada é alocado no laço): CA = vértices na câmera, SA = na tela
 const NV = MESH.n;
 const CA = new Float32Array(NV * 3), SA = new Float32Array(NV * 2);
 const tmp = [0, 0, 0, 0, 0];
+// direção da luz (unitária, no espaço da câmera); ordem/prof/luz = faces visíveis, profundidade e brilho
 const LUZ = (() => { const l = [-0.45, 0.65, -0.62], n = Math.hypot(...l); return l.map(v => v / n); })();
 const ordem = [], prof = new Float32Array(MESH.F.length), luz = new Float32Array(MESH.F.length);
 
+// Projeta todos os vértices, descarta faces de costas para a câmera (normal · centro >= 0),
+// calcula o brilho (0,34 ambiente + 0,66 difusa) e ordena da face mais distante para a mais próxima.
 function projetarMalha(k) {
   const P = MESH.P, Wt = MESH.W;
   for (let i = 0; i < NV; i++) {
@@ -976,6 +1097,7 @@ function projetarMalha(k) {
   ordem.sort((a, b) => prof[b] - prof[a]);
 }
 
+// path do polígono de uma face (índices v), em coordenadas de tela
 function caminho(g, v) {
   g.beginPath();
   g.moveTo(SA[2 * v[0]], SA[2 * v[0] + 1]);
@@ -983,6 +1105,8 @@ function caminho(g, v) {
   g.closePath();
 }
 
+// Pinta as faces em "ordem". cores = {body, vest, hair} em [r,g,b], multiplicadas pelo brilho;
+// solida = uma cor só para todas (silhueta da postura calibrada).
 function desenharMalha(g, cores, solida) {
   const Fs = MESH.F;
   g.lineJoin = 'round';
@@ -998,11 +1122,14 @@ function desenharMalha(g, cores, solida) {
 }
 
 // ponto na superfície das costas (para os sensores) e se está virado para a câmera
+// costas: inverte a superelipse da seção para achar o z das costas em (x, y); off = folga para fora (m).
 function costas(x, y, off) {
   const s = secAt(y), a = s[1], b = s[2] * 0.92;
   const c = Math.pow(Math.min(1, Math.abs(x) / a), 1 / SE);
   return [x, y, -b * Math.pow(Math.sqrt(Math.max(0, 1 - c * c)), SE) - (off || 0.007)];
 }
+// pontoTela: projeta o ponto das costas já na pose atual. vis = a superfície está virada para a câmera
+// (compara com um ponto 6 cm para fora); esc = px por metro naquela profundidade.
 function pontoTela(x, y, k) {
   const p = costas(x, y), w = peso(y);
   const a = xf(p[0], p[1], p[2], w, [0, 0, 0, 0, 0], k);
@@ -1013,6 +1140,8 @@ function pontoTela(x, y, k) {
 
 const ROT = []; // rótulos já desenhados no quadro (evita sobreposição)
 let EXP = false; // modo expandido: rótulo com o nome em cima e a leitura grande embaixo
+// Caixa de rótulo ligada ao ponto p por uma linha, à esquerda (lado -1) ou à direita (1). Se encostar em
+// outra caixa (ROT), desce até 6 vezes. ativo = texto escuro; inativo = cinza. Ponto escondido: sem rótulo.
 function rotulo(g, nome, valor, p, lado, ativo, dpr) {
   if (!p.vis) return;
   const dois = EXP && valor;
@@ -1048,11 +1177,14 @@ function rotulo(g, nome, valor, p, lado, ativo, dpr) {
   }
 }
 
+// cor do miolo do flex: verde até 70% do limite, amarelo até o limite, vermelho acima
 function corNivel(pct, lim) {
   const r = pct / (lim || 15);
   return r < 0.7 ? C.ok : r < 1 ? C.warn : C.bad;
 }
 
+// Flex como faixa ao longo das costas (pos.y0 a pos.y1, N pontos): ativo = tira escura com miolo na cor
+// do nível; desligado ou ausente = tracejado. Atrás do corpo fica translúcido.
 function desenharFlex(g, pos, det, ativo, modo, pct, k, dpr, lim, leitura) {
   const N = 12, pts = [];
   let vis = false, esc = 0;
@@ -1081,6 +1213,8 @@ function desenharFlex(g, pos, det, ativo, modo, pct, k, dpr, lim, leitura) {
   rotulo(g, EXP && S.on ? pos.rotulo + ', leitura ' + leitura : pos.rotulo, st, meio, pos.lado, ativo, dpr);
 }
 
+// Sensores sobre o manequim (flex, flex 2, MPU, FSR, motor) com rótulos. m = null: sem conexão.
+// t = tempo da animação (ms), usado nas ondas do motor.
 function desenharMarcadores(g, m, k, dpr, t) {
   const c = S.cfg || {};
   const on = !!m;
@@ -1117,7 +1251,7 @@ function desenharMarcadores(g, m, k, dpr, t) {
     rotulo(g, EXP ? POS.fsr.rotulo + ', pressão' : POS.fsr.rotulo, String(m.fsr), p, POS.fsr.lado, true, dpr);
   }
 
-  // motor na nuca: ondas só enquanto vibra de verdade
+  // motor na nuca: ondas só enquanto vibra de verdade (campo "motor" do firmware), com um tremido leve
   const mo = pontoTela(POS.motor.x, POS.motor.y, k), vib = on && m.motor;
   const r = Math.max(4 * dpr, mo.esc * 0.017);
   g.globalAlpha = mo.vis ? 1 : 0.3;
@@ -1137,6 +1271,7 @@ function desenharMarcadores(g, m, k, dpr, t) {
 }
 
 // olhos na frente da cabeça: só aparecem com o rosto virado para a câmera
+// (a normal do elipsoide no ponto do olho decide; de perfil o olho achata)
 function desenharOlhos(g, k, dpr) {
   const a = [0, 0, 0, 0, 0], b = [0, 0, 0, 0, 0];
   for (const s of [-1, 1]) {
@@ -1156,16 +1291,20 @@ function desenharOlhos(g, k, dpr) {
   }
 }
 
+// canvas do 3D; "fantasma" é um canvas fora da tela para a silhueta da postura calibrada
 const c3 = $('c3d'), g3 = c3.getContext('2d');
 const fantasma = document.createElement('canvas');
 const gf = fantasma.getContext('2d');
 
+// Cor do colete: tecido neutro sem calibração ou calibrando; senão tecido misturado com a cor do estado
+// (verde/amarelo/vermelho). No alerta a mistura pulsa.
 function corColete(m) {
   if (!m || !m.calibrado || m.calibrando) return C.fabric;
   const e = m.estado === 'alerta' ? C.bad : m.estado === 'atencao' ? C.warn : C.ok;
   return mix(C.fabric, e, m.estado === 'alerta' ? 0.72 + 0.2 * Math.sin(performance.now() / 90) : 0.62);
 }
 
+// Um quadro do 3D. dt = segundos desde o quadro anterior; t = tempo do requestAnimationFrame (ms).
 function render(dt, t) {
   const dpr = ajustarCanvas(c3);
   const W = c3.width, H = c3.height;
@@ -1173,6 +1312,7 @@ function render(dt, t) {
   const m = S.on ? S.d : null;
 
   // alvos e suavização (os dados chegam a 10 Hz; a animação roda a ~30 fps)
+  // pose alvo: pitch limitado a ±75°, roll a ±60°; curvatura = 0,6° por ponto % do flex, até 40% (24°)
   const rad = Math.PI / 180;
   let tp = 0, tr = 0, tb = 0;
   if (m && m.mpuOk) {
@@ -1183,6 +1323,7 @@ function render(dt, t) {
     const f = Math.max(m.flexAtivo ? m.flexPct : 0, m.flex2Ativo ? m.flex2Pct : 0);
     tb = Math.min(f, 40) * 0.6 * rad;
   }
+  // filtro exponencial independente da taxa de quadros: constante de 0,12 s na pose e 0,22 s na câmera
   const a = 1 - Math.exp(-dt / 0.12), av = 1 - Math.exp(-dt / 0.22);
   V.p += (tp - V.p) * a; V.r += (tr - V.r) * a; V.b += (tb - V.b) * a;
   if (!arrastando) { V.yaw += (V.yawA - V.yaw) * av; V.el += (V.elA - V.el) * av; }
@@ -1200,7 +1341,7 @@ function render(dt, t) {
   g3.strokeStyle = css(C.edge); g3.lineWidth = Math.max(3 * dpr, k.F / tmp[2] * 0.022); g3.lineCap = 'round';
   g3.beginPath(); g3.moveTo(ax, ay); g3.lineTo(tmp[3], tmp[4]); g3.stroke();
 
-  // silhueta da postura calibrada
+  // silhueta da postura calibrada: a malha na pose zero (= referência), translúcida; só a partir de 2°
   const desvio = Math.abs(V.p) + Math.abs(V.r) + V.b;
   if (m && m.calibrado && desvio > 2 * rad) {
     if (fantasma.width !== W || fantasma.height !== H) { fantasma.width = W; fantasma.height = H; }
@@ -1212,6 +1353,7 @@ function render(dt, t) {
     g3.globalAlpha = 1;
   }
 
+  // manequim na pose atual, olhos e sensores por cima
   projetarMalha(k);
   desenharMalha(g3, { body: C.body, vest: corColete(m), hair: C.hair });
   desenharOlhos(g3, k, dpr);
@@ -1220,6 +1362,7 @@ function render(dt, t) {
 
 // laço: ~30 fps, pausa com a aba oculta, com o 3D fechado ou fora da tela
 let raf = 0, ultimoQ = 0, visivel3d = true, aberto3d = ler('3d') !== '0';
+// requestAnimationFrame com no máximo um quadro a cada 32 ms; dt limitado a 0,1 s depois de pausas
 function laco(t) {
   raf = requestAnimationFrame(laco);
   if (t - ultimoQ < 32) return;
@@ -1227,6 +1370,7 @@ function laco(t) {
   ultimoQ = t;
   render(dt, t);
 }
+// Liga ou para o laço: só roda com o 3D aberto, o palco visível na tela e a aba em primeiro plano.
 function atualizarLaco() {
   const rodar = aberto3d && visivel3d && !document.hidden;
   if (rodar && !raf) { ultimoQ = performance.now(); raf = requestAnimationFrame(laco); }
@@ -1236,6 +1380,7 @@ document.addEventListener('visibilitychange', atualizarLaco);
 if ('IntersectionObserver' in window)
   new IntersectionObserver(es => { visivel3d = es[0].isIntersecting; atualizarLaco(); }).observe($('palco'));
 
+// Mostra ou oculta o 3D (preferência salva em colete.3d).
 function abrir3d(v) {
   aberto3d = v;
   guardar('3d', v ? '1' : '0');
@@ -1262,6 +1407,7 @@ $('bExpandir').onclick = () => expandir(!EXP);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && EXP) expandir(false); });
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && EXP) expandir(false); });
 
+// botões de vista: definem a câmera alvo; render() leva a câmera até lá suavemente
 $('vistas').onclick = e => {
   const v = e.target.dataset && e.target.dataset.v;
   if (!v) return;
@@ -1272,7 +1418,7 @@ $('vistas').onclick = e => {
   for (const b of $('vistas').children) b.setAttribute('aria-pressed', b === e.target);
 };
 
-// arrastar para girar
+// arrastar para girar: horizontal = yaw, vertical = elevação (limitada); a câmera fica onde soltar
 let arrastando = false, px = 0, py = 0;
 const palco = $('palco');
 palco.addEventListener('pointerdown', e => { arrastando = true; px = e.clientX; py = e.clientY; palco.setPointerCapture(e.pointerId); palco.style.cursor = 'grabbing'; });
@@ -1288,6 +1434,8 @@ const solta = () => { arrastando = false; palco.style.cursor = ''; };
 palco.addEventListener('pointerup', solta);
 palco.addEventListener('pointercancel', solta);
 
+// "Inverter frente/trás" e "Inverter lado": corrigem o sentido quando o sensor foi preso virado, sem
+// regravar o firmware. Salvas em colete.invP / colete.invR; só mudam a exibição (texto e 3D).
 $('invP').checked = S.invP;
 $('invR').checked = S.invR;
 $('invP').onchange = e => { S.invP = e.target.checked; guardar('invP', S.invP ? '1' : '0'); if (S.d) hero(S.d); };
@@ -1295,11 +1443,13 @@ $('invR').onchange = e => { S.invR = e.target.checked; guardar('invR', S.invR ? 
 
 // ================================================================== início
 
+// tema automático acompanha a troca claro/escuro do sistema (addListener: navegadores antigos)
 const mq = matchMedia('(prefers-color-scheme: dark)');
 const trocaSistema = () => { if (tema === 'auto') aplicarTema(); };
 if (mq.addEventListener) mq.addEventListener('change', trocaSistema); else if (mq.addListener) mq.addListener(trocaSistema);
 window.addEventListener('resize', desenharGrafico);
 
+// ordem: cores antes de qualquer desenho; 3D (escondido se não houver canvas 2D); tela "conectando"; conexão
 aplicarTema();
 if (!g3) { $('viz').classList.add('oculto'); aberto3d = false; } else abrir3d(aberto3d);
 heroOff();

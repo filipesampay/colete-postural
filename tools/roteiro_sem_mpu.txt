@@ -1,13 +1,20 @@
 # MPU desligado no boot (fio solto) e flex também solto: não pode travar nem vibrar à toa.
+# Uso: tools/sim.sh tools/roteiro_sem_mpu.txt
+# Documentação: Documentação/09-simulador-testes-ferramentas.md
 !mpu off
 !flex 0
 !boot
+# Esperado no boot: "[mpu] MPU-6050 não encontrado ... Tentando de novo a cada 2 s."
 !espera 3000
+# Esperado: I2C "nada ❌", MPU "não responde ❌", flex "~0: flex solto ou quebrado".
 diag
 !espera 1200
+# Esperado: calibração negada ("MPU-6050 não encontrado"), sem pulsos de calibração.
 calib
 !estado
 !eco MPU é encaixado com a placa ligada
+# Esperado: "[mpu] MPU-6050 reconectado" sem reiniciar a placa; depois a calibração funciona
+# (só com o MPU: "flex 0", o flex continua inativo).
 !mpu on
 !espera 4000
 !estado

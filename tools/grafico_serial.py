@@ -7,6 +7,15 @@ Uso (com o colete ligado no USB):
     ~/.venvs/colete/bin/python tools/grafico_serial.py --csv dados.csv  # só redesenha um CSV
 
 O script manda "plot on" sozinho e desliga no final. Também funciona com o CSV baixado do app.
+
+Entrada: linhas do comando "plot on" do firmware (console_enviarDados, 10 Hz), no formato
+    desvio:12.3,limite:20.0,pitch:11.0,roll:-2.1,flexPct:4.0,limiteFlex:15.0,alerta:0
+("alerta" vale 5 em alerta, para aparecer no Serial Plotter junto das outras curvas).
+Saída: postura_AAAAMMDD_HHMMSS.csv (coluna t em segundos + os campos acima) e .png (200 dpi):
+desvio × limite, faixa laranja onde o motor estava em alerta e, se o flex estava ativo, um 2º
+gráfico com a curvatura do flex × limite do flex.
+Dependências: pyserial (só para capturar) e matplotlib (para desenhar), no venv ~/.venvs/colete.
+Documentação: Documentação/09-simulador-testes-ferramentas.md
 """
 import argparse
 import csv
@@ -17,6 +26,10 @@ from datetime import datetime
 
 
 def achar_porta():
+    """Primeira porta serial USB do Linux (/dev/ttyUSB* da CH340/CP210x ou /dev/ttyACM*).
+
+    No macOS a porta tem outro nome (/dev/cu.usbserial-*): passe com -p.
+    """
     portas = sorted(glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*"))
     if not portas:
         sys.exit("Nenhuma porta /dev/ttyUSB* encontrada. O cabo é de dados? A placa está ligada?")
@@ -24,10 +37,16 @@ def achar_porta():
 
 
 def capturar(porta, segundos, arquivo):
-    import serial
+    """Liga o "plot on", lê a serial por "segundos" (0 = até Ctrl+C) e grava o CSV.
+
+    Linhas que não começam com "desvio:" (eventos, respostas de comandos) são só mostradas.
+    O tempo t é o relógio do PC desde o início da captura. Retorna o nome do CSV.
+    """
+    import serial  # importado aqui: redesenhar um CSV (--csv) não precisa do pyserial
 
     linhas = []
     with serial.Serial(porta, 115200, timeout=0.5) as s:
+        # espera a porta estabilizar e descarta o que chegou antes (linhas pela metade)
         time.sleep(0.3)
         s.reset_input_buffer()
         s.write(b"plot on\n")
@@ -40,6 +59,7 @@ def capturar(porta, segundos, arquivo):
                     if bruto:
                         print("  ", bruto)
                     continue
+                # "desvio:12.3,limite:20.0,..." -> {"desvio": "12.3", "limite": "20.0", ...}
                 campos = dict(p.split(":", 1) for p in bruto.split(",") if ":" in p)
                 try:
                     valores = {k: float(v) for k, v in campos.items()}
@@ -55,6 +75,7 @@ def capturar(porta, segundos, arquivo):
 
     if not linhas:
         sys.exit("Nenhum dado recebido. O firmware do colete está gravado?")
+    # colunas na ordem da 1ª linha, com o tempo primeiro
     chaves = ["t"] + [k for k in linhas[0] if k != "t"]
     with open(arquivo, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=chaves, extrasaction="ignore")
@@ -65,6 +86,7 @@ def capturar(porta, segundos, arquivo):
 
 
 def ler_csv(arquivo):
+    """Lê o CSV em {coluna: [valores float]}; colunas de texto (ex.: "estado" do app) ficam de fora."""
     with open(arquivo) as f:
         linhas = list(csv.DictReader(f))
     dados = {}
@@ -77,18 +99,21 @@ def ler_csv(arquivo):
 
 
 def desenhar(arquivo, png):
+    """Gera o PNG da figura do TCC a partir do CSV (deste script ou o baixado pelo app)."""
     import matplotlib
 
-    matplotlib.use("Agg")
+    matplotlib.use("Agg")  # sem janela: só grava o arquivo (funciona sem interface gráfica)
     import matplotlib.pyplot as plt
 
     d = ler_csv(arquivo)
+    # "t" no CSV deste script e no do app; "tempo_s" aceito por compatibilidade
     t = d.get("t") or d.get("tempo_s")
     if t is None:
         sys.exit("CSV sem coluna de tempo (t ou tempo_s)")
     t0 = t[0]
     t = [x - t0 for x in t]
 
+    # o 2º gráfico só aparece se o flex chegou a marcar alguma curvatura
     tem_flex = "flexPct" in d and max(d["flexPct"]) > 0
     fig, eixos = plt.subplots(2 if tem_flex else 1, 1, figsize=(10, 6 if tem_flex else 4), sharex=True)
     if not tem_flex:
@@ -98,6 +123,7 @@ def desenhar(arquivo, png):
     ax.plot(t, d["desvio"], color="#2f6fd1", linewidth=1.6, label="Desvio postural (°)")
     if "limite" in d:
         ax.plot(t, d["limite"], color="#d64545", linestyle="--", linewidth=1.2, label="Limite (°)")
+    # faixa sombreada onde alerta > 0 (5 no "plot on", 1 no CSV do app)
     alerta = d.get("alerta")
     if alerta:
         topo = max(max(d["desvio"]), max(d.get("limite", [0]))) * 1.1 or 1
@@ -126,6 +152,7 @@ def desenhar(arquivo, png):
 
 
 def main():
+    """Captura e desenha, ou (--csv) só desenha um CSV já existente."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("-p", "--porta", help="porta serial (padrão: primeira /dev/ttyUSB*)")
     ap.add_argument("-t", "--tempo", type=float, default=0, help="segundos de captura (0 = até Ctrl+C)")

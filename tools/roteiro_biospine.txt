@@ -1,24 +1,34 @@
 # Montagem do README do BioSpine V3: MPU com AD0 em 3V3 (0x69), dois flex (34 e 35), FSR no 32,
 # sem motor e sem botão. O firmware tem que se virar sozinho.
+# Uso: tools/sim.sh tools/roteiro_biospine.txt
+# As linhas antes do "!boot" montam o hardware antes de a placa ligar.
+# Documentação: Documentação/09-simulador-testes-ferramentas.md
 !mpuaddr 69
 !flex 1900
 !flex2 2100
 !fsr 600
 !boot
+# O flex 2 vem desligado por padrão (GPIO35 solto parece um flex): com o 2º flex ligado de
+# verdade, é preciso ligá-lo de propósito.
 set flex2 auto
 !eco diag com a pinagem do BioSpine
+# Esperado: I2C 0x69 ✅, flex 1 ✅, flex 2 "detectado ✅" (depois dos 2 s de leitura estável),
+# FSR "detectado ✅" (pressão estável acima de 200).
 !espera 2500
 diag
 !espera 1200
 !estado
 !eco calibração pela serial (não há botão)
+# Esperado: "concluída (... flex 1900, flex2 2100)": as duas referências do flex gravadas.
 calib
 !espera 3000
 !estado
 !eco só o flex 2 (direito) dobrando 30%
+# Esperado: flex2 30 % (2100 -> 1470) e "alerta" depois de 3 s, com o flex 1 e o desvio em ~0.
 !flex2 1470
 !espera 4000
 !estado
 !flex2 2100
 !espera 1000
+# Esperado: resposta JSON no formato do BioSpine V3, com "pressure" ~600 (FSR) e "status":"GOOD".
 STATUS

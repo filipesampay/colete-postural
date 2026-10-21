@@ -1,10 +1,19 @@
 # Roteiro padrão do simulador: um dia típico do colete.
+# Uso: tools/sim.sh (ou tools/sim.sh tools/roteiro.txt). Montagem do GUIA: MPU em 0x68, flex 1
+# no GPIO34 (começa em 2048), flex 2 solto, sem FSR. Parâmetros padrão: limite 20°, histerese 3°,
+# tempo 3000 ms, flex 15 %.
+# Linhas com "!" controlam o simulador; as outras são digitadas na serial do firmware.
+# Comentário só com "#" na 1ª coluna (qualquer outra linha vai para a serial).
+# Documentação: Documentação/09-simulador-testes-ferramentas.md
 !eco boot e diagnóstico
+# Esperado: I2C 0x68 ✅, MPU ✅, flex ~2048 ✅, flex 2 "desligado", FSR não detectado,
+# motor pulsa 1 s, calibração pendente.
 diag
 !espera 1500
 !estado
 
 !eco sem calibração: inclinar não pode vibrar
+# Requisito: sem referência não há postura correta. Esperado: desvio ~35° e estado "ok", motor parado.
 !frente 35
 !espera 5000
 !estado
@@ -12,6 +21,8 @@ diag
 !espera 2000
 
 !eco calibração pelo botão (postura correta = 5° para a frente, flex 2000)
+# Esperado: 1 pulso ao apertar, "calibrando...", 2,5 s depois "concluída" e 2 pulsos curtos;
+# desvio volta a ~0° (a referência agora é 5° para a frente) e o "get" mostra a calibração salva.
 !frente 5
 !flex 2000
 !espera 3000
@@ -21,6 +32,7 @@ diag
 get
 
 !eco pico curto (1 s) acima do limite: não vibra
+# Requisito: tempo mínimo. Esperado: "atencao" durante o pico, volta a "ok", nenhum "motor LIGA".
 !frente 30
 !espera 1000
 !estado
@@ -29,6 +41,8 @@ get
 !estado
 
 !eco corcunda por 5 s: atenção e depois alerta com pulsos 300/700
+# Esperado: "atencao" aos 2 s; depois de 3 s em má postura, "alerta" e o motor alterna
+# LIGA/desliga a cada 300 ms ligado / 700 ms desligado.
 !frente 32
 !espera 2000
 !estado
@@ -36,11 +50,13 @@ get
 !estado
 
 !eco volta para 18° de desvio (dentro da histerese 20-3): continua em alerta
+# Requisito: histerese. Esperado: desvio 18° e estado ainda "alerta" (motor continua pulsando).
 !frente 23
 !espera 1500
 !estado
 
 !eco desce para 16° de desvio (abaixo de 17°): para de vibrar
+# Esperado: "motor desliga" e estado "ok" com desvio 16°.
 !frente 21
 !espera 1500
 !estado
@@ -49,6 +65,8 @@ get
 !estado
 
 !eco só o flex dobrando (queda de 25%): alerta pelo flex
+# Requisito: o flex sozinho alerta. Esperado: flexPct 25 % (2000 -> 1500), "alerta" depois de 3 s
+# com o desvio em ~0°; ao endireitar o flex, volta a "ok".
 !flex 1500
 !espera 4000
 !estado
@@ -57,6 +75,8 @@ get
 !estado
 
 !eco flex desconectado (lê 0): é desativado e não alerta
+# Requisito: fallback do flex. Esperado: flex "inativo" (0 % mesmo lendo ~0), estado "ok",
+# e o diag mostra "~0: flex solto ou quebrado. O colete segue só com o MPU."
 !flex 0
 !espera 3000
 !estado
@@ -66,6 +86,8 @@ diag
 !espera 3000
 
 !eco ajuste pela serial: limite 10°, tempo 1 s
+# Esperado: cada "set" responde "salvo." e mostra os parâmetros; com 13° de desvio (> 10°)
+# entra em alerta em ~1 s. O "reset" volta aos padrões e mantém a calibração.
 set limite 10
 set tempo 1000
 !frente 18
@@ -76,6 +98,8 @@ set tempo 1000
 reset
 
 !eco MPU desconecta e volta
+# Esperado: "[mpu] MPU-6050 parou de responder", estado com mpu 0 e desvio 0 (sem MPU só o flex
+# pode alertar); ao religar, "[mpu] MPU-6050 reconectado" (o firmware tenta a cada 2 s).
 !mpu off
 !espera 2500
 !estado
@@ -84,6 +108,9 @@ reset
 !estado
 
 !eco comandos do BioSpine V3
+# Esperado: STATUS responde uma linha JSON (angle, flex_left, flex_right, pressure, status...);
+# CALIBRATE calibra e responde {"success":true,"message":"Calibration completed"}; START manda o
+# JSON a cada 1 s até o STOP.
 STATUS
 CALIBRATE
 !espera 3000
@@ -92,11 +119,15 @@ START
 STOP
 
 !eco plotter
+# Esperado: linhas "desvio:...,limite:...,pitch:...,roll:...,flexPct:...,limiteFlex:...,alerta:..."
+# a 10 Hz (o formato que o tools/grafico_serial.py lê); "plot off" para.
 plot on
 !espera 300
 plot off
 
 !eco calibração recusada: mexeu durante a média
+# O tronco se mexe (rampa de 60 °/s) no meio da média de 1 s. Esperado: "recusada: mexeu durante a
+# média (60 °/s)", 1 pulso longo (600 ms) e a calibração anterior continua valendo (cal 1).
 !botao
 !espera 1700
 !frente 25
