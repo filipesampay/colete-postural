@@ -73,6 +73,7 @@ A página (`src/web/index.html`) vai embutida no firmware (`board_build.embed_tx
 Para testar sem placa:
 - `python3 tools/sim_web.py --demo` → http://localhost:8080. Quem responde é **o próprio firmware** compilado para o PC, com um MPU falso. No terminal: `!frente 30`, `!lado -15`, `!flex 1500`, `!botao`, `!mpu off`, `diag`... (`--demo` mexe o tronco sozinho, bom para gravar a tela).
 - `python3 tools/mock_server.py` → imitação do ESP32 em Python (feita junto com a página).
+- **Windows:** `dist/BioSpine-Simulador.exe` é o mesmo `mock_server.py` empacotado; ao abrir, sobe o servidor e abre o navegador. Gerar de novo: `tools/gerar_exe.sh` (PyInstaller no Wine; preparação no topo do script).
 Protocolo WebSocket (porta 81): seção 8 do GUIA, com campos a mais (`flex2*`, `fsr*`, `flexModo`, `intensidade`, eventos `{"t":"evt"}`). A definição completa está no topo de `src/protocolo.h`.
 
 ## Como funciona (para explicar à banca)
